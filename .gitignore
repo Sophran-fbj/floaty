@@ -26,16 +26,10 @@ dist-ssr
 *.sln
 *.sw?
 
-# AI IDE configs
-.agent/
-.agents/
-.kiro/
-.trae/
-.windsurf/
+# Test screenshots
+manager-loaded.png
+manager-test.png
 
 # Claude Code plugins cache
 skills/
 skills-lock.json
-
-# Test screenshots
-*.png
