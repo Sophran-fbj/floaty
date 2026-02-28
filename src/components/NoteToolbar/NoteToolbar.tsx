@@ -19,6 +19,7 @@ type ToolbarItem = {
   title: string;
   mark: string;
   attrs?: Record<string, any>;
+  noActive?: boolean;
 };
 
 const TEXT_FORMAT_ITEMS: ToolbarItem[] = [
@@ -29,18 +30,18 @@ const TEXT_FORMAT_ITEMS: ToolbarItem[] = [
 ];
 
 const BLOCK_FORMAT_ITEMS: ToolbarItem[] = [
-  { label: "\u2022", command: "toggleBulletList", title: "无序列表", mark: "bulletList" },
-  { label: "1.", command: "toggleOrderedList", title: "有序列表", mark: "orderedList" },
-  { label: "\u2611", command: "toggleTaskList", title: "任务列表", mark: "taskList" },
+  { label: "\u2022", command: "toggleBulletList", title: "无序列表", mark: "bulletList", noActive: true },
+  { label: "1.", command: "toggleOrderedList", title: "有序列表", mark: "orderedList", noActive: true },
+  { label: "\u2611", command: "toggleTaskList", title: "任务列表", mark: "taskList", noActive: true },
 ];
 
 export function NoteToolbar({ editor, fontSize, onFontSizeChange }: NoteToolbarProps) {
   if (!editor) return null;
 
   const renderItem = (item: ToolbarItem) => {
-    const isActive = item.attrs
+    const isActive = !item.noActive && (item.attrs
       ? editor.isActive(item.mark, item.attrs)
-      : editor.isActive(item.mark);
+      : editor.isActive(item.mark));
 
     const handleClick = () => {
       if (item.attrs) {

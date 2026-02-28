@@ -21,7 +21,7 @@
 }
 
 .toolbarWrapper:hover .toolbar {
-  flex-wrap: wrap;
+  flex-wrap: wrap-reverse;
   overflow: visible;
   z-index: 10;
   box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
