@@ -82,6 +82,7 @@ pub fn run() {
             commands::windows::show_note_window,
             commands::windows::close_note_window,
             commands::windows::delete_note_and_close,
+            commands::windows::set_note_pinned,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

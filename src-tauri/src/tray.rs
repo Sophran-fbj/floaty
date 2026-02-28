@@ -90,7 +90,7 @@ fn handle_show_all(app: &AppHandle) {
                 .min_inner_size(280.0, 200.0)
                 .position(note.pos_x, note.pos_y)
                 .decorations(false)
-                .always_on_top(true)
+                .always_on_top(note.is_pinned)
                 .skip_taskbar(true)
                 .visible(false)
                 .build();

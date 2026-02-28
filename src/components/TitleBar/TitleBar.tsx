@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
+import { Pin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -12,12 +13,14 @@ const appWindow = getCurrentWebviewWindow();
 
 interface TitleBarProps {
   title: string;
+  isPinned: boolean;
   onTitleChange: (title: string) => void;
+  onTogglePin: () => void;
   onClose: () => void;
   onDelete: () => void;
 }
 
-export function TitleBar({ title, onTitleChange, onClose, onDelete }: TitleBarProps) {
+export function TitleBar({ title, isPinned, onTitleChange, onTogglePin, onClose, onDelete }: TitleBarProps) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(title);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -81,6 +84,19 @@ export function TitleBar({ title, onTitleChange, onClose, onDelete }: TitleBarPr
         )}
       </div>
       <div className={styles.actions}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className={`${styles.btn} ${styles.pinBtn} ${isPinned ? styles.pinActive : styles.pinInactive}`}
+              onClick={onTogglePin}
+            >
+              <Pin size={14} />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">{isPinned ? "取消置顶" : "置顶"}</TooltipContent>
+        </Tooltip>
         <Tooltip>
           <TooltipTrigger asChild>
             <Button

@@ -45,7 +45,7 @@ pub fn open_note_window(
         .min_inner_size(280.0, 200.0)
         .position(note.pos_x, note.pos_y)
         .decorations(false)
-        .always_on_top(true)
+        .always_on_top(note.is_pinned)
         .skip_taskbar(true)
         .visible(false);
 
@@ -107,6 +107,36 @@ pub fn delete_note_and_close(
     let label = format!("note-{}", id);
     if let Some(window) = app.get_webview_window(&label) {
         window.close().map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
+/// Toggle always-on-top for a note window and persist to DB
+#[tauri::command]
+pub fn set_note_pinned(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    id: String,
+    pinned: bool,
+) -> Result<(), String> {
+    {
+        let conn = state.db.lock().map_err(|e| e.to_string())?;
+        notes::update_note(
+            &conn,
+            &id,
+            &notes::UpdateNote {
+                is_pinned: Some(pinned),
+                ..Default::default()
+            },
+        )
+        .map_err(|e| e.to_string())?;
+    }
+
+    let label = format!("note-{}", id);
+    if let Some(window) = app.get_webview_window(&label) {
+        window
+            .set_always_on_top(pinned)
+            .map_err(|e| e.to_string())?;
     }
     Ok(())
 }

@@ -12,6 +12,7 @@ pub struct Note {
     pub height: f64,
     pub font_size: f64,
     pub is_visible: bool,
+    pub is_pinned: bool,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -26,10 +27,11 @@ pub struct UpdateNote {
     pub height: Option<f64>,
     pub font_size: Option<f64>,
     pub is_visible: Option<bool>,
+    pub is_pinned: Option<bool>,
 }
 
 const SELECT_COLS: &str =
-    "id, title, content, pos_x, pos_y, width, height, font_size, is_visible, created_at, updated_at";
+    "id, title, content, pos_x, pos_y, width, height, font_size, is_visible, is_pinned, created_at, updated_at";
 
 fn row_to_note(row: &rusqlite::Row) -> rusqlite::Result<Note> {
     Ok(Note {
@@ -42,8 +44,9 @@ fn row_to_note(row: &rusqlite::Row) -> rusqlite::Result<Note> {
         height: row.get(6)?,
         font_size: row.get(7)?,
         is_visible: row.get::<_, i32>(8)? != 0,
-        created_at: row.get(9)?,
-        updated_at: row.get(10)?,
+        is_pinned: row.get::<_, i32>(9)? != 0,
+        created_at: row.get(10)?,
+        updated_at: row.get(11)?,
     })
 }
 
@@ -117,6 +120,10 @@ pub fn update_note(
     if let Some(is_visible) = data.is_visible {
         sets.push("is_visible = ?");
         values.push(Box::new(is_visible as i32));
+    }
+    if let Some(is_pinned) = data.is_pinned {
+        sets.push("is_pinned = ?");
+        values.push(Box::new(is_pinned as i32));
     }
 
     if !sets.is_empty() {

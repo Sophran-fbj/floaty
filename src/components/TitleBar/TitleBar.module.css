@@ -64,6 +64,27 @@
   background: rgba(0, 0, 0, 0.06);
 }
 
+.pinBtn {
+  transition: opacity 0.15s, transform 0.2s, background 0.15s;
+}
+
+.pinActive {
+  opacity: 1;
+  color: rgba(0, 0, 0, 0.85);
+}
+
+.pinActive svg {
+  stroke-width: 2.5;
+}
+
+.pinActive:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.pinInactive {
+  transform: rotate(45deg);
+}
+
 .placeholder {
   opacity: 0.5;
   font-style: italic;

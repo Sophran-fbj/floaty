@@ -211,6 +211,17 @@ export function NoteWindow({ noteId }: NoteWindowProps) {
     [noteId],
   );
 
+  const handleTogglePin = useCallback(() => {
+    setNote((prev) => {
+      if (!prev) return prev;
+      const newPinned = !prev.is_pinned;
+      invoke("set_note_pinned", { id: noteId, pinned: newPinned }).catch(
+        console.warn,
+      );
+      return { ...prev, is_pinned: newPinned };
+    });
+  }, [noteId]);
+
   const handleClose = useCallback(async () => {
     // Flush pending content save
     if (saveTimeout.current) {
@@ -306,7 +317,9 @@ export function NoteWindow({ noteId }: NoteWindowProps) {
       >
         <TitleBar
           title={note.title}
+          isPinned={note.is_pinned}
           onTitleChange={handleTitleChange}
+          onTogglePin={handleTogglePin}
           onClose={handleClose}
           onDelete={handleDeleteRequest}
         />

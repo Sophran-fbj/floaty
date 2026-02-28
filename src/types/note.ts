@@ -8,6 +8,7 @@ export interface Note {
   height: number;
   font_size: number;
   is_visible: boolean;
+  is_pinned: boolean;
   created_at: string;
   updated_at: string;
 }

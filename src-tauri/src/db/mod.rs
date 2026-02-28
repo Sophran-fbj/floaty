@@ -25,6 +25,7 @@ pub fn init_db(app_data_dir: &std::path::Path) -> Result<Connection, rusqlite::E
             height REAL NOT NULL DEFAULT 400.0,
             font_size REAL NOT NULL DEFAULT 14.0,
             is_visible INTEGER NOT NULL DEFAULT 1,
+            is_pinned INTEGER NOT NULL DEFAULT 1,
             created_at TEXT NOT NULL DEFAULT (datetime('now')),
             updated_at TEXT NOT NULL DEFAULT (datetime('now'))
         );",
@@ -35,6 +36,9 @@ pub fn init_db(app_data_dir: &std::path::Path) -> Result<Connection, rusqlite::E
 
     // Ensure font_size column exists for DBs created without it
     let _ = conn.execute("ALTER TABLE notes ADD COLUMN font_size REAL NOT NULL DEFAULT 14.0", []);
+
+    // Ensure is_pinned column exists for DBs created without it
+    let _ = conn.execute("ALTER TABLE notes ADD COLUMN is_pinned INTEGER NOT NULL DEFAULT 1", []);
 
     Ok(conn)
 }
