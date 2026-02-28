@@ -1,0 +1,119 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(*)",
+      "Glob(*)",
+      "Grep(*)",
+      "Edit(*)",
+      "Write(*)",
+      "NotebookEdit(*)",
+      "WebFetch(*)",
+      "WebSearch(*)",
+      "Task(*)",
+      "Bash(npm run dev*)",
+      "Bash(npm run build*)",
+      "Bash(npm run tauri*)",
+      "Bash(npx vitest*)",
+      "Bash(npx tsc*)",
+      "Bash(cargo build*)",
+      "Bash(cargo check*)",
+      "Bash(cargo clippy*)",
+      "Bash(cargo fmt*)",
+      "Bash(cargo test*)",
+      "Bash(git *)",
+      "Bash(gh *)",
+      "Bash(ls *)",
+      "Bash(pwd)",
+      "Bash(cat *)",
+      "Bash(mkdir *)",
+      "Bash(cp *)",
+      "Bash(mv *)",
+      "Bash(rm *)",
+      "Bash(npx skills*)",
+      "Bash(npx shadcn*)",
+      "Bash(npm install*)",
+      "Bash(npm i *)",
+      "Bash(npm uninstall*)",
+      "Bash(cargo add*)",
+      "Bash(cargo remove*)",
+      "Bash(cd src-tauri*)",
+      "mcp__filesystem__*",
+      "mcp__context7__*",
+      "mcp__shadcn__*"
+    ],
+    "deny": [
+      "Bash(rm -rf /)",
+      "Bash(rm -rf ~)",
+      "Bash(git push --force*)",
+      "Bash(git reset --hard*)",
+      "Bash(git clean -f*)",
+      "Bash(cargo publish*)",
+      "Bash(npm publish*)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo \"\\n========== Floaty 开发约定速查 ==========\\n[架构] Tauri 2 + React 19 + TipTap 3 + SQLite\\n[窗口] 无边框置顶窗口, URL参数 ?id=<uuid>\\n[状态] 无全局状态管理, useState + invoke()\\n[编辑器] TipTap 是内容唯一源, update_note 返回 void\\n[保存] debounce 500ms fire-and-forget\\n[DPI] onMoved/onResized 返回物理像素, 存DB前除以 scaleFactor\\n[样式] Tailwind 4 + shadcn/ui (New York)\\n[路径] @/ -> ./src/\\n==========================================\\n\""
+          },
+          {
+            "type": "command",
+            "command": "git status --porcelain 2>/dev/null | head -5 | awk 'NR==1{printf \"\\n[Git] 有未提交的变更:\\n\"} {print \"  \" $0}'"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if echo \"$CLAUDE_TOOL_INPUT_FILE_PATH\" | grep -qE 'src/components/ui/'; then echo '\\n[shadcn/ui 保护] 这是 shadcn/ui 基础组件，通常不应直接编辑。\\n如需自定义，建议在业务组件中包装。如确实需要修改，请确认意图。' && exit 2; fi"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if echo \"$CLAUDE_TOOL_INPUT_FILE_PATH\" | grep -q '\\.rs$'; then cd src-tauri && cargo fmt --quiet 2>/dev/null || true; fi"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if echo \"$CLAUDE_TOOL_INPUT_FILE_PATH\" | grep -q 'NoteEditor'; then echo \"\\n[TipTap 提醒] 编辑器相关文件已修改:\\n  - Tailwind preflight 会重置 list-style, 编辑器内需手动恢复\\n  - 自定义扩展: ListBackspace + CleanTrailingEmpty\\n  - 编辑器是内容唯一源, 不要从后端覆盖编辑器状态\\n\"; fi"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if echo \"$CLAUDE_TOOL_INPUT_FILE_PATH\" | grep -qE 'src-tauri/src/(commands|db)/'; then echo \"\\n[Tauri Command 提醒] Rust 后端文件已修改:\\n  - update_note 返回 () 不返回 Note\\n  - 新 command 需在 lib.rs invoke_handler 中注册\\n  - DB 操作使用 AppState 中的连接池\\n  - 窗口创建后初始隐藏, 前端渲染完成后调 show_note_window\\n\"; fi"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if echo \"$CLAUDE_TOOL_INPUT_FILE_PATH\" | grep -q '\\.rs$'; then cd src-tauri && cargo check --message-format=short 2>&1 | tail -5; fi"
+          }
+        ]
+      }
+    ]
+  }
+}

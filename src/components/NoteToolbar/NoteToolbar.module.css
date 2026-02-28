@@ -1,0 +1,76 @@
+.toolbarWrapper {
+  height: 33px;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.toolbar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 2px;
+  padding: 2px 8px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  background: #FFF9C4;
+  transition: box-shadow 0.15s ease;
+}
+
+.toolbarWrapper:hover .toolbar {
+  flex-wrap: wrap;
+  overflow: visible;
+  z-index: 10;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.btn {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 4px;
+  color: rgba(0, 0, 0, 0.6);
+  flex-shrink: 0;
+}
+
+.btn:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.active {
+  background: rgba(0, 0, 0, 0.1);
+  color: rgba(0, 0, 0, 0.9);
+}
+
+.separator {
+  width: 1px;
+  height: 16px;
+  background: rgba(0, 0, 0, 0.1);
+  margin: 0 4px;
+  flex-shrink: 0;
+}
+
+.spacer {
+  flex: 1;
+  min-width: 0;
+}
+
+.fontSizeGroup {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.fontSizeLabel {
+  font-size: 11px;
+  color: rgba(0, 0, 0, 0.5);
+  min-width: 20px;
+  text-align: center;
+  user-select: none;
+}

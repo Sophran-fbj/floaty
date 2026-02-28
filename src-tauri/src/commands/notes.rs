@@ -1,0 +1,31 @@
+use crate::db::notes::{self, Note, UpdateNote};
+use crate::state::AppState;
+use tauri::State;
+
+#[tauri::command]
+pub fn create_note(state: State<'_, AppState>) -> Result<Note, String> {
+    let conn = state.db.lock().map_err(|e| e.to_string())?;
+    notes::create_note(&conn).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn get_note(state: State<'_, AppState>, id: String) -> Result<Note, String> {
+    let conn = state.db.lock().map_err(|e| e.to_string())?;
+    notes::get_note(&conn, &id).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn update_note(
+    state: State<'_, AppState>,
+    id: String,
+    data: UpdateNote,
+) -> Result<(), String> {
+    let conn = state.db.lock().map_err(|e| e.to_string())?;
+    notes::update_note(&conn, &id, &data).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn delete_note(state: State<'_, AppState>, id: String) -> Result<(), String> {
+    let conn = state.db.lock().map_err(|e| e.to_string())?;
+    notes::delete_note(&conn, &id).map_err(|e| e.to_string())
+}
