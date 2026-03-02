@@ -18,6 +18,11 @@ import {
   arrayMove,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover";
 import type { Note } from "@/types/note";
 import styles from "./ManagerWindow.module.css";
 
@@ -34,7 +39,7 @@ function SortableNoteCard({
   note: Note;
   confirmDeleteId: string | null;
   onOpen: (id: string) => void;
-  onDeleteRequest: (e: React.MouseEvent, id: string) => void;
+  onDeleteRequest: (id: string) => void;
   onDeleteConfirm: () => void;
   onDeleteCancel: () => void;
   formatTime: (isoStr: string) => string;
@@ -59,64 +64,50 @@ function SortableNoteCard({
       ref={setNodeRef}
       style={style}
       className={`${styles.noteCard} ${isDragging ? styles.dragging : ""}`}
-      onClick={() => confirmDeleteId !== note.id && onOpen(note.id)}
+      onClick={() => onOpen(note.id)}
       {...attributes}
       {...listeners}
     >
-      {confirmDeleteId === note.id ? (
-        <div className={styles.confirmRow}>
-          <span className={styles.confirmText}>确定删除？</span>
-          <button
-            className={styles.confirmBtn}
-            onClick={(e) => {
-              e.stopPropagation();
-              onDeleteConfirm();
-            }}
-          >
-            删除
-          </button>
-          <button
-            className={styles.cancelBtn}
-            onClick={(e) => {
-              e.stopPropagation();
-              onDeleteCancel();
-            }}
-          >
-            取消
-          </button>
+      <div className={styles.noteIcon}>
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z" />
+          <path d="M15 3v4a2 2 0 0 0 2 2h4" />
+        </svg>
+      </div>
+      <div className={styles.noteInfo}>
+        <div className={styles.noteTitle}>{getNoteTitle(note)}</div>
+        <div className={styles.noteTime}>
+          {formatTime(note.updated_at)}
         </div>
-      ) : (
-        <>
-          <div className={styles.noteIcon}>
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z" />
-              <path d="M15 3v4a2 2 0 0 0 2 2h4" />
-            </svg>
-          </div>
-          <div className={styles.noteInfo}>
-            <div className={styles.noteTitle}>{getNoteTitle(note)}</div>
-            <div className={styles.noteTime}>
-              {formatTime(note.updated_at)}
-            </div>
-          </div>
-          {note.is_pinned && (
-            <div className={styles.pinnedIcon} title="已置顶">
-              <ArrowUpToLine size={14} strokeWidth={3} />
-            </div>
-          )}
-          <div className={styles.noteActions}>
+      </div>
+      {note.is_pinned && (
+        <div className={styles.pinnedIcon} title="已置顶">
+          <ArrowUpToLine size={14} strokeWidth={3} />
+        </div>
+      )}
+      <div className={styles.noteActions}>
+        <Popover
+          open={confirmDeleteId === note.id}
+          onOpenChange={(open) => {
+            if (!open) onDeleteCancel();
+          }}
+        >
+          <PopoverTrigger asChild>
             <button
               className={`${styles.smallBtn} ${styles.deleteBtn}`}
-              onClick={(e) => onDeleteRequest(e, note.id)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onDeleteRequest(note.id);
+              }}
               title="删除"
             >
               <svg
@@ -132,9 +123,37 @@ function SortableNoteCard({
                 <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
               </svg>
             </button>
-          </div>
-        </>
-      )}
+          </PopoverTrigger>
+          <PopoverContent
+            className="w-auto p-3"
+            side="left"
+            align="center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="text-sm text-muted-foreground mb-3">确定删除这个便签？</p>
+            <div className="flex justify-center gap-2">
+              <button
+                className="px-3 py-1.5 text-xs rounded-md bg-muted text-muted-foreground hover:bg-muted/70 transition-colors cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDeleteCancel();
+                }}
+              >
+                取消
+              </button>
+              <button
+                className="px-3 py-1.5 text-xs rounded-md bg-red-500/85 text-white hover:bg-red-500 transition-colors cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDeleteConfirm();
+                }}
+              >
+                删除
+              </button>
+            </div>
+          </PopoverContent>
+        </Popover>
+      </div>
     </div>
   );
 }
@@ -271,13 +290,9 @@ export function ManagerWindow() {
     }
   }, []);
 
-  const handleDeleteRequest = useCallback(
-    (e: React.MouseEvent, id: string) => {
-      e.stopPropagation();
-      setConfirmDeleteId(id);
-    },
-    [],
-  );
+  const handleDeleteRequest = useCallback((id: string) => {
+    setConfirmDeleteId(id);
+  }, []);
 
   const handleDeleteConfirm = useCallback(async () => {
     if (!confirmDeleteId) return;
