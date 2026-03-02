@@ -1,13 +1,194 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { ArrowUpToLine } from "lucide-react";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragOverlay,
+  type DragStartEvent,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+  arrayMove,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import type { Note } from "@/types/note";
 import styles from "./ManagerWindow.module.css";
+
+function SortableNoteCard({
+  note,
+  confirmDeleteId,
+  onOpen,
+  onDeleteRequest,
+  onDeleteConfirm,
+  onDeleteCancel,
+  formatTime,
+  getNoteTitle,
+}: {
+  note: Note;
+  confirmDeleteId: string | null;
+  onOpen: (id: string) => void;
+  onDeleteRequest: (e: React.MouseEvent, id: string) => void;
+  onDeleteConfirm: () => void;
+  onDeleteCancel: () => void;
+  formatTime: (isoStr: string) => string;
+  getNoteTitle: (note: Note) => string;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: note.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`${styles.noteCard} ${isDragging ? styles.dragging : ""}`}
+      onClick={() => confirmDeleteId !== note.id && onOpen(note.id)}
+      {...attributes}
+      {...listeners}
+    >
+      {confirmDeleteId === note.id ? (
+        <div className={styles.confirmRow}>
+          <span className={styles.confirmText}>确定删除？</span>
+          <button
+            className={styles.confirmBtn}
+            onClick={(e) => {
+              e.stopPropagation();
+              onDeleteConfirm();
+            }}
+          >
+            删除
+          </button>
+          <button
+            className={styles.cancelBtn}
+            onClick={(e) => {
+              e.stopPropagation();
+              onDeleteCancel();
+            }}
+          >
+            取消
+          </button>
+        </div>
+      ) : (
+        <>
+          <div className={styles.noteIcon}>
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z" />
+              <path d="M15 3v4a2 2 0 0 0 2 2h4" />
+            </svg>
+          </div>
+          <div className={styles.noteInfo}>
+            <div className={styles.noteTitle}>{getNoteTitle(note)}</div>
+            <div className={styles.noteTime}>
+              {formatTime(note.updated_at)}
+            </div>
+          </div>
+          {note.is_pinned && (
+            <div className={styles.pinnedIcon} title="已置顶">
+              <ArrowUpToLine size={14} strokeWidth={3} />
+            </div>
+          )}
+          <div className={styles.noteActions}>
+            <button
+              className={`${styles.smallBtn} ${styles.deleteBtn}`}
+              onClick={(e) => onDeleteRequest(e, note.id)}
+              title="删除"
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+              </svg>
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function NoteCardContent({
+  note,
+  formatTime,
+  getNoteTitle,
+}: {
+  note: Note;
+  formatTime: (isoStr: string) => string;
+  getNoteTitle: (note: Note) => string;
+}) {
+  return (
+    <>
+      <div className={styles.noteIcon}>
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z" />
+          <path d="M15 3v4a2 2 0 0 0 2 2h4" />
+        </svg>
+      </div>
+      <div className={styles.noteInfo}>
+        <div className={styles.noteTitle}>{getNoteTitle(note)}</div>
+        <div className={styles.noteTime}>{formatTime(note.updated_at)}</div>
+      </div>
+      {note.is_pinned && (
+        <div className={styles.pinnedIcon} title="已置顶">
+          <ArrowUpToLine size={14} strokeWidth={3} />
+        </div>
+      )}
+    </>
+  );
+}
 
 export function ManagerWindow() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [activeNote, setActiveNote] = useState<Note | null>(null);
   const dragRef = useRef<HTMLDivElement>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 5 },
+    }),
+  );
 
   const loadNotes = useCallback(async () => {
     try {
@@ -113,6 +294,35 @@ export function ManagerWindow() {
   const handleDeleteCancel = useCallback(() => {
     setConfirmDeleteId(null);
   }, []);
+
+  const handleDndStart = useCallback(
+    (event: DragStartEvent) => {
+      const found = notes.find((n) => n.id === event.active.id);
+      setActiveNote(found ?? null);
+    },
+    [notes],
+  );
+
+  const handleDndEnd = useCallback(
+    (event: DragEndEvent) => {
+      setActiveNote(null);
+      const { active, over } = event;
+      if (!over || active.id === over.id) return;
+
+      const oldIndex = notes.findIndex((n) => n.id === active.id);
+      const newIndex = notes.findIndex((n) => n.id === over.id);
+      if (oldIndex === -1 || newIndex === -1) return;
+
+      const reordered = arrayMove(notes, oldIndex, newIndex);
+      setNotes(reordered);
+
+      const ids = reordered.map((n) => n.id);
+      invoke("reorder_notes", { ids }).catch((e: unknown) =>
+        console.warn("Failed to reorder notes:", e),
+      );
+    },
+    [notes],
+  );
 
   const formatTime = (isoStr: string) => {
     try {
@@ -228,90 +438,44 @@ export function ManagerWindow() {
             <span>暂无便签</span>
           </div>
         ) : (
-          notes.map((note) => (
-            <div
-              key={note.id}
-              className={styles.noteCard}
-              onClick={() =>
-                confirmDeleteId !== note.id && handleOpenNote(note.id)
-              }
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragStart={handleDndStart}
+            onDragEnd={handleDndEnd}
+          >
+            <SortableContext
+              items={notes.map((n) => n.id)}
+              strategy={verticalListSortingStrategy}
             >
-              {confirmDeleteId === note.id ? (
-                <div className={styles.confirmRow}>
-                  <span className={styles.confirmText}>确定删除？</span>
-                  <button
-                    className={styles.confirmBtn}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteConfirm();
-                    }}
-                  >
-                    删除
-                  </button>
-                  <button
-                    className={styles.cancelBtn}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteCancel();
-                    }}
-                  >
-                    取消
-                  </button>
+              {notes.map((note) => (
+                <SortableNoteCard
+                  key={note.id}
+                  note={note}
+                  confirmDeleteId={confirmDeleteId}
+                  onOpen={handleOpenNote}
+                  onDeleteRequest={handleDeleteRequest}
+                  onDeleteConfirm={handleDeleteConfirm}
+                  onDeleteCancel={handleDeleteCancel}
+                  formatTime={formatTime}
+                  getNoteTitle={getNoteTitle}
+                />
+              ))}
+            </SortableContext>
+            <DragOverlay dropAnimation={{ duration: 200, easing: "ease" }}>
+              {activeNote ? (
+                <div
+                  className={`${styles.noteCard} ${styles.dragOverlay}`}
+                >
+                  <NoteCardContent
+                    note={activeNote}
+                    formatTime={formatTime}
+                    getNoteTitle={getNoteTitle}
+                  />
                 </div>
-              ) : (
-                <>
-                  <div className={styles.noteIcon}>
-                    <svg
-                      width="18"
-                      height="18"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z" />
-                      <path d="M15 3v4a2 2 0 0 0 2 2h4" />
-                    </svg>
-                  </div>
-                  <div className={styles.noteInfo}>
-                    <div className={styles.noteTitle}>
-                      {getNoteTitle(note)}
-                    </div>
-                    <div className={styles.noteTime}>
-                      {formatTime(note.updated_at)}
-                    </div>
-                  </div>
-                  {note.is_pinned && (
-                    <div className={styles.pinnedIcon} title="已置顶">
-                      <ArrowUpToLine size={14} strokeWidth={3} />
-                    </div>
-                  )}
-                  <div className={styles.noteActions}>
-                    <button
-                      className={`${styles.smallBtn} ${styles.deleteBtn}`}
-                      onClick={(e) => handleDeleteRequest(e, note.id)}
-                      title="删除"
-                    >
-                      <svg
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                      </svg>
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          ))
+              ) : null}
+            </DragOverlay>
+          </DndContext>
         )}
       </div>
 

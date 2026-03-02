@@ -40,5 +40,8 @@ pub fn init_db(app_data_dir: &std::path::Path) -> Result<Connection, rusqlite::E
     // Ensure is_pinned column exists for DBs created without it
     let _ = conn.execute("ALTER TABLE notes ADD COLUMN is_pinned INTEGER NOT NULL DEFAULT 1", []);
 
+    // Ensure sort_order column exists for DBs created without it
+    let _ = conn.execute("ALTER TABLE notes ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0", []);
+
     Ok(conn)
 }

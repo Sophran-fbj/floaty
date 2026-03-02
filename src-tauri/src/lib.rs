@@ -80,6 +80,7 @@ pub fn run() {
             commands::notes::get_all_notes,
             commands::notes::update_note,
             commands::notes::delete_note,
+            commands::notes::reorder_notes,
             commands::windows::open_note_window,
             commands::windows::show_note_window,
             commands::windows::close_note_window,

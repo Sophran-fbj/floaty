@@ -9,6 +9,7 @@ export interface Note {
   font_size: number;
   is_visible: boolean;
   is_pinned: boolean;
+  sort_order: number;
   created_at: string;
   updated_at: string;
 }
