@@ -15,6 +15,12 @@ pub fn get_note(state: State<'_, AppState>, id: String) -> Result<Note, String> 
 }
 
 #[tauri::command]
+pub fn get_all_notes(state: State<'_, AppState>) -> Result<Vec<Note>, String> {
+    let conn = state.db.lock().map_err(|e| e.to_string())?;
+    notes::get_all_notes(&conn).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 pub fn update_note(
     state: State<'_, AppState>,
     id: String,

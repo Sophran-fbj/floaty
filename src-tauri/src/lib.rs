@@ -5,7 +5,7 @@ mod tray;
 
 use state::AppState;
 use std::sync::Mutex;
-use tauri::Manager;
+use tauri::{Manager, WebviewUrl, WebviewWindowBuilder};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -34,7 +34,19 @@ pub fn run() {
             let handle = app.handle().clone();
             tray::create_tray(&handle).expect("failed to create tray");
 
+            // Pre-create manager window (hidden) — avoids slow WebView2 init on first open
+            let manager_url = WebviewUrl::App("index.html?view=manager".into());
+            let _ = WebviewWindowBuilder::new(&handle, "manager", manager_url)
+                .title("Floaty - 管理便签")
+                .inner_size(480.0, 560.0)
+                .min_inner_size(380.0, 400.0)
+                .decorations(false)
+                .center()
+                .visible(false)
+                .build();
+
             // Restore visible notes on startup
+            // We're on the main thread here, so build_note_window (sync) is safe.
             let state = handle.state::<AppState>();
             let notes = {
                 let conn = state.db.lock().unwrap_or_else(|e| e.into_inner());
@@ -45,29 +57,18 @@ pub fn run() {
             for note in &notes {
                 if note.is_visible {
                     has_visible = true;
-                    let state_ref = handle.state::<AppState>();
-                    let _ = commands::windows::open_note_window(
-                        handle.clone(),
-                        state_ref,
-                        note.id.clone(),
-                    );
+                    let _ = commands::windows::build_note_window(&handle, note);
                 }
             }
 
-            // If no visible notes, create one so the user sees something
+            // If no visible notes and DB is empty, create one so the user sees something
             if !has_visible && notes.is_empty() {
-                let state_ref = handle.state::<AppState>();
                 let result = {
-                    let conn = state_ref.db.lock().unwrap_or_else(|e| e.into_inner());
+                    let conn = state.db.lock().unwrap_or_else(|e| e.into_inner());
                     db::notes::create_note(&conn)
                 };
                 if let Ok(note) = result {
-                    let state_ref2 = handle.state::<AppState>();
-                    let _ = commands::windows::open_note_window(
-                        handle.clone(),
-                        state_ref2,
-                        note.id.clone(),
-                    );
+                    let _ = commands::windows::build_note_window(&handle, &note);
                 }
             }
 
@@ -76,6 +77,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             commands::notes::create_note,
             commands::notes::get_note,
+            commands::notes::get_all_notes,
             commands::notes::update_note,
             commands::notes::delete_note,
             commands::windows::open_note_window,
@@ -83,12 +85,12 @@ pub fn run() {
             commands::windows::close_note_window,
             commands::windows::delete_note_and_close,
             commands::windows::set_note_pinned,
+            commands::windows::open_manager_window,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
         .run(|_app, event| {
             // Keep the app alive when all windows are closed (tray stays active).
-            // The tray "退出" calls app.exit(0) which bypasses this handler.
             if let tauri::RunEvent::ExitRequested { api, .. } = event {
                 api.prevent_exit();
             }

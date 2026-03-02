@@ -6,12 +6,14 @@ use tauri::{
 
 pub fn create_tray(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
     let new_note = MenuItemBuilder::with_id("new_note", "新建便签").build(app)?;
+    let manage = MenuItemBuilder::with_id("manage", "管理便签").build(app)?;
     let show_all = MenuItemBuilder::with_id("show_all", "显示全部").build(app)?;
     let hide_all = MenuItemBuilder::with_id("hide_all", "隐藏全部").build(app)?;
     let quit = MenuItemBuilder::with_id("quit", "退出").build(app)?;
 
     let menu = MenuBuilder::new(app)
         .item(&new_note)
+        .item(&manage)
         .item(&PredefinedMenuItem::separator(app)?)
         .item(&show_all)
         .item(&hide_all)
@@ -28,13 +30,23 @@ pub fn create_tray(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
             let id = event.id().as_ref();
             match id {
                 "new_note" => handle_new_note(app),
+                "manage" => handle_manage(app),
                 "show_all" => handle_show_all(app),
                 "hide_all" => handle_hide_all(app),
                 "quit" => std::process::exit(0),
                 _ => {}
             }
         })
-        .on_tray_icon_event(|_tray, _event| {})
+        .on_tray_icon_event(|tray, event| {
+            if let tauri::tray::TrayIconEvent::Click {
+                button: tauri::tray::MouseButton::Left,
+                button_state: tauri::tray::MouseButtonState::Up,
+                ..
+            } = event
+            {
+                handle_manage(tray.app_handle());
+            }
+        })
         .build(app)?;
 
     Ok(())
@@ -47,13 +59,34 @@ fn handle_new_note(app: &AppHandle) {
         crate::db::notes::create_note(&conn)
     };
     if let Ok(note) = result {
-        let id = note.id.clone();
-        let state_clone = app.state::<crate::state::AppState>();
-        let _ = crate::commands::windows::open_note_window(app.clone(), state_clone, id);
+        // We're on the main thread, so build_note_window (sync) is safe.
+        let _ = crate::commands::windows::build_note_window(app, &note);
     }
 }
 
-/// Show ALL notes — opens windows for every note in DB
+fn handle_manage(app: &AppHandle) {
+    let label = "manager";
+
+    if let Some(window) = app.get_webview_window(label) {
+        let _ = window.show();
+        let _ = window.set_focus();
+        return;
+    }
+
+    let url = WebviewUrl::App("index.html?view=manager".into());
+
+    let _ = WebviewWindowBuilder::new(app, label, url)
+        .title("Floaty - 管理便签")
+        .inner_size(480.0, 560.0)
+        .min_inner_size(380.0, 400.0)
+        .decorations(false)
+        .center()
+        .visible(false)
+        .build();
+}
+
+/// Show ALL notes — opens windows for every note in DB.
+/// Uses build_note_window for consistent window creation.
 fn handle_show_all(app: &AppHandle) {
     let state = app.state::<crate::state::AppState>();
     let notes = {
@@ -76,25 +109,9 @@ fn handle_show_all(app: &AppHandle) {
         }
     }
 
-    // Then show/create windows
+    // Then show/create windows using shared logic
     for note in &notes {
-        let label = format!("note-{}", note.id);
-        if let Some(window) = app.get_webview_window(&label) {
-            let _ = window.show();
-            let _ = window.set_focus();
-        } else {
-            let url = WebviewUrl::App(format!("index.html?id={}", note.id).into());
-            let _ = WebviewWindowBuilder::new(app, &label, url)
-                .title("Floaty Note")
-                .inner_size(note.width, note.height)
-                .min_inner_size(280.0, 200.0)
-                .position(note.pos_x, note.pos_y)
-                .decorations(false)
-                .always_on_top(note.is_pinned)
-                .skip_taskbar(true)
-                .visible(false)
-                .build();
-        }
+        let _ = crate::commands::windows::build_note_window(app, note);
     }
 }
 
