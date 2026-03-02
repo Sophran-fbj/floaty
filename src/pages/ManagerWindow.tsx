@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { ArrowUpToLine } from "lucide-react";
 import type { Note } from "@/types/note";
 import styles from "./ManagerWindow.module.css";
 
@@ -284,16 +285,7 @@ export function ManagerWindow() {
                   </div>
                   {note.is_pinned && (
                     <div className={styles.pinnedIcon} title="已置顶">
-                      <svg
-                        width="12"
-                        height="12"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                        stroke="currentColor"
-                        strokeWidth="1"
-                      >
-                        <path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z" />
-                      </svg>
+                      <ArrowUpToLine size={14} strokeWidth={3} />
                     </div>
                   )}
                   <div className={styles.noteActions}>

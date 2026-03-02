@@ -65,7 +65,11 @@
 }
 
 .pinBtn {
-  transition: opacity 0.15s, transform 0.2s, background 0.15s;
+  transition: opacity 0.15s, background 0.15s;
+}
+
+.pinBtn svg {
+  transition: transform 0.2s;
 }
 
 .pinActive {
@@ -81,7 +85,7 @@
   background: rgba(0, 0, 0, 0.06);
 }
 
-.pinInactive {
+.pinInactive svg {
   transform: rotate(45deg);
 }
 
