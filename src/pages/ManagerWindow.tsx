@@ -225,10 +225,22 @@ export function ManagerWindow() {
 
   // Refresh notes when the window becomes visible again (after hide/show cycle)
   useEffect(() => {
-    const onVisibility = () => {
+    const onVisibility = async () => {
       if (document.visibilityState === "visible") {
         loadNotes();
         setConfirmDeleteId(null);
+        // Fix DPI scaling after screen lock/unlock
+        try {
+          const { getCurrentWebviewWindow } = await import("@tauri-apps/api/webviewWindow");
+          const { LogicalSize } = await import("@tauri-apps/api/dpi");
+          const win = getCurrentWebviewWindow();
+          const size = await win.innerSize();
+          const factor = await win.scaleFactor();
+          await win.setSize(new LogicalSize(
+            Math.round(size.width / factor),
+            Math.round(size.height / factor)
+          ));
+        } catch {}
       }
     };
     document.addEventListener("visibilitychange", onVisibility);

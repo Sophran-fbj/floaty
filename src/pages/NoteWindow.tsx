@@ -118,20 +118,11 @@ export function NoteWindow({ noteId }: NoteWindowProps) {
             visibilityTimer.current = setTimeout(async () => {
               if (!mounted) return;
               try {
-                const factor = await appWindow.scaleFactor();
-                const size = await appWindow.innerSize();
-                const currentW = Math.round(size.width / factor);
-                const currentH = Math.round(size.height / factor);
-                if (
-                  goodSize.current &&
-                  (currentW < goodSize.current.width * 0.7 ||
-                    currentH < goodSize.current.height * 0.7)
-                ) {
-                  const { LogicalSize } = await import("@tauri-apps/api/dpi");
-                  await appWindow.setSize(
-                    new LogicalSize(goodSize.current.width, goodSize.current.height),
-                  );
-                }
+                const { LogicalSize } = await import("@tauri-apps/api/dpi");
+                // Force resize to correct DPI scaling issues after screen lock/unlock
+                await appWindow.setSize(
+                  new LogicalSize(goodSize.current!.width, goodSize.current!.height),
+                );
               } catch {}
             }, 200);
           }

@@ -6,6 +6,9 @@ import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
 import { Extension } from "@tiptap/core";
 import type { Editor } from "@tiptap/react";
+import Document from "@tiptap/extension-document";
+import Paragraph from "@tiptap/extension-paragraph";
+import Text from "@tiptap/extension-text";
 import styles from "./NoteEditor.module.css";
 
 /**
@@ -83,13 +86,51 @@ export function NoteEditor({
 }: NoteEditorProps) {
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+        document: false,
+        paragraph: false,
+        text: false,
+      }),
+      Document,
+      Paragraph.extend({
+        addProseMirrorPlugins() {
+          return [];
+        },
+      }),
+      Text.extend({
+        addProseMirrorPlugins() {
+          return [];
+        },
+      }),
       Underline,
       TaskList,
       TaskItem.configure({ nested: true }),
       ListBackspace,
       CleanTrailingEmpty,
     ],
+    editorProps: {
+      clipboardTextSerializer: (slice) => {
+        const text: string[] = [];
+        slice.content.forEach((node) => {
+          if (node.type.name === 'paragraph') {
+            text.push(node.textContent);
+          } else if (node.type.name === 'heading') {
+            text.push(node.textContent);
+          } else if (node.type.name === 'bulletList' || node.type.name === 'orderedList') {
+            node.forEach((listItem) => {
+              text.push(listItem.textContent);
+            });
+          } else if (node.type.name === 'taskList') {
+            node.forEach((taskItem) => {
+              text.push(taskItem.textContent);
+            });
+          } else {
+            text.push(node.textContent);
+          }
+        });
+        return text.join('\n');
+      },
+    },
     content: tryParseJSON(initialContent),
     onUpdate: ({ editor }) => {
       onChange(JSON.stringify(editor.getJSON()));
