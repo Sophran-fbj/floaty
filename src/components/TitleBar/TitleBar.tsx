@@ -36,7 +36,31 @@ export function TitleBar({ title, isPinned, onTitleChange, onTogglePin, onClose,
     if ((e.target as HTMLElement).closest("button")) return;
     if ((e.target as HTMLElement).closest("input")) return;
     if ((e.target as HTMLElement).closest("." + styles.titleText)) return;
-    appWindow.startDragging();
+
+    const startX = e.screenX;
+    const startY = e.screenY;
+    const threshold = 4;
+
+    const onMouseMove = async (moveEvent: MouseEvent) => {
+      const dx = moveEvent.screenX - startX;
+      const dy = moveEvent.screenY - startY;
+      if (dx * dx + dy * dy >= threshold * threshold) {
+        cleanup();
+        try {
+          appWindow.startDragging();
+        } catch {}
+      }
+    };
+
+    const onMouseUp = () => cleanup();
+
+    const cleanup = () => {
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", onMouseUp);
+    };
+
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", onMouseUp);
   };
 
   const commitTitle = () => {

@@ -71,11 +71,10 @@ fn handle_manage(app: &AppHandle) {
     let label = "manager";
 
     if let Some(window) = app.get_webview_window(label) {
+        // Unminimize if minimized
         let _ = window.unminimize();
         let _ = window.show();
         let _ = window.set_focus();
-        let _ = window.set_always_on_top(true);
-        let _ = window.set_always_on_top(false);
         return;
     }
 

@@ -321,6 +321,17 @@ export function ManagerWindow() {
     [],
   );
 
+  const handleMinimize = useCallback(async () => {
+    try {
+      const { getCurrentWebviewWindow } = await import(
+        "@tauri-apps/api/webviewWindow"
+      );
+      await getCurrentWebviewWindow().minimize();
+    } catch (e) {
+      console.error("Minimize failed:", e);
+    }
+  }, []);
+
   const handleClose = useCallback(async () => {
     try {
       const { getCurrentWebviewWindow } = await import(
@@ -472,6 +483,24 @@ export function ManagerWindow() {
               strokeLinejoin="round"
             >
               <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2" />
+            </svg>
+          </button>
+          <button
+            className={styles.iconBtn}
+            onClick={handleMinimize}
+            title="最小化"
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M5 12h14" />
             </svg>
           </button>
           <button
