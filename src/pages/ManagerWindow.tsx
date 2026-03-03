@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import { ArrowUpToLine } from "lucide-react";
 import {
   DndContext,
@@ -63,7 +64,7 @@ function SortableNoteCard({
     <div
       ref={setNodeRef}
       style={style}
-      className={`${styles.noteCard} ${isDragging ? styles.dragging : ""}`}
+      className={`${styles.noteCard} ${note.is_visible ? styles.noteCardOpen : ""} ${note.is_pinned ? styles.noteCardPinned : ""} ${isDragging ? styles.dragging : ""}`}
       onClick={() => onOpen(note.id)}
       {...attributes}
       {...listeners}
@@ -234,6 +235,22 @@ export function ManagerWindow() {
     return () => document.removeEventListener("visibilitychange", onVisibility);
   }, [loadNotes]);
 
+  // Refresh notes when any note state changes (Rust backend emits "notes-changed")
+  useEffect(() => {
+    let unlisten: (() => void) | undefined;
+    let debounceTimer: ReturnType<typeof setTimeout>;
+    listen("notes-changed", () => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => loadNotes(), 300);
+    }).then((fn) => {
+      unlisten = fn;
+    });
+    return () => {
+      clearTimeout(debounceTimer);
+      unlisten?.();
+    };
+  }, [loadNotes]);
+
   // Show manager window once rendered
   const hasShown = useRef(false);
   useEffect(() => {
@@ -249,15 +266,38 @@ export function ManagerWindow() {
     }
   }, []);
 
+  // Drag title bar: only start dragging after mouse moves a threshold distance,
+  // so a simple click (to activate window) won't trigger drag.
   const handleDragStart = useCallback(
-    async (e: React.MouseEvent) => {
+    (e: React.MouseEvent) => {
       if ((e.target as HTMLElement).closest("button")) return;
-      try {
-        const { getCurrentWebviewWindow } = await import(
-          "@tauri-apps/api/webviewWindow"
-        );
-        getCurrentWebviewWindow().startDragging();
-      } catch {}
+      const startX = e.screenX;
+      const startY = e.screenY;
+      const threshold = 4;
+
+      const onMouseMove = async (moveEvent: MouseEvent) => {
+        const dx = moveEvent.screenX - startX;
+        const dy = moveEvent.screenY - startY;
+        if (dx * dx + dy * dy >= threshold * threshold) {
+          cleanup();
+          try {
+            const { getCurrentWebviewWindow } = await import(
+              "@tauri-apps/api/webviewWindow"
+            );
+            getCurrentWebviewWindow().startDragging();
+          } catch {}
+        }
+      };
+
+      const onMouseUp = () => cleanup();
+
+      const cleanup = () => {
+        document.removeEventListener("mousemove", onMouseMove);
+        document.removeEventListener("mouseup", onMouseUp);
+      };
+
+      document.addEventListener("mousemove", onMouseMove);
+      document.addEventListener("mouseup", onMouseUp);
     },
     [],
   );
@@ -480,7 +520,7 @@ export function ManagerWindow() {
             <DragOverlay dropAnimation={{ duration: 200, easing: "ease" }}>
               {activeNote ? (
                 <div
-                  className={`${styles.noteCard} ${styles.dragOverlay}`}
+                  className={`${styles.noteCard} ${styles.dragOverlay} ${activeNote.is_visible ? styles.noteCardOpen : ""} ${activeNote.is_pinned ? styles.noteCardPinned : ""}`}
                 >
                   <NoteCardContent
                     note={activeNote}

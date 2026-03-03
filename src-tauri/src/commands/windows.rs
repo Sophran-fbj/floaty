@@ -1,3 +1,4 @@
+use crate::commands::notes::emit_notes_changed;
 use crate::db::notes;
 use crate::state::AppState;
 use tauri::{AppHandle, Manager, State, WebviewUrl, WebviewWindowBuilder};
@@ -84,6 +85,7 @@ pub async fn open_note_window(
 
     builder.build().map_err(|e| e.to_string())?;
 
+    emit_notes_changed(&app);
     Ok(())
 }
 
@@ -124,6 +126,7 @@ pub async fn close_note_window(
     if let Some(window) = app.get_webview_window(&label) {
         window.destroy().map_err(|e| e.to_string())?;
     }
+    emit_notes_changed(&app);
     Ok(())
 }
 
@@ -143,6 +146,7 @@ pub async fn delete_note_and_close(
     if let Some(window) = app.get_webview_window(&label) {
         window.destroy().map_err(|e| e.to_string())?;
     }
+    emit_notes_changed(&app);
     Ok(())
 }
 
@@ -173,6 +177,7 @@ pub async fn set_note_pinned(
             .set_always_on_top(pinned)
             .map_err(|e| e.to_string())?;
     }
+    emit_notes_changed(&app);
     Ok(())
 }
 

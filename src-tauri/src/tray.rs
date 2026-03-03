@@ -4,6 +4,8 @@ use tauri::{
     AppHandle, Manager, WebviewUrl, WebviewWindowBuilder,
 };
 
+use crate::commands::notes::emit_notes_changed;
+
 pub fn create_tray(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
     let new_note = MenuItemBuilder::with_id("new_note", "新建便签").build(app)?;
     let manage = MenuItemBuilder::with_id("manage", "管理便签").build(app)?;
@@ -61,6 +63,7 @@ fn handle_new_note(app: &AppHandle) {
     if let Ok(note) = result {
         // We're on the main thread, so build_note_window (sync) is safe.
         let _ = crate::commands::windows::build_note_window(app, &note);
+        emit_notes_changed(app);
     }
 }
 
@@ -113,6 +116,7 @@ fn handle_show_all(app: &AppHandle) {
     for note in &notes {
         let _ = crate::commands::windows::build_note_window(app, note);
     }
+    emit_notes_changed(app);
 }
 
 /// Hide all note windows and update DB is_visible to false
@@ -143,4 +147,5 @@ fn handle_hide_all(app: &AppHandle) {
             let _ = window.hide();
         }
     }
+    emit_notes_changed(app);
 }

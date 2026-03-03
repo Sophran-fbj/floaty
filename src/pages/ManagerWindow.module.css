@@ -65,6 +65,7 @@
 }
 
 .noteCard {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -80,6 +81,29 @@
 .noteCard:hover {
   background: rgba(255, 255, 255, 0.9);
   border-color: rgba(0, 0, 0, 0.08);
+}
+
+.noteCardOpen::before,
+.noteCardPinned::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  border-radius: 8px 0 0 8px;
+}
+
+.noteCardOpen::before {
+  background: #66bb6a;
+}
+
+.noteCardPinned::before {
+  background: #ffa726;
+}
+
+.noteCardOpen.noteCardPinned::before {
+  background: linear-gradient(to bottom, #66bb6a 50%, #ffa726 50%);
 }
 
 .noteIcon {
