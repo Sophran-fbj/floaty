@@ -20,6 +20,7 @@ export function NoteWindow({ noteId }: NoteWindowProps) {
   const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const moveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const resizeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const visibilityTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Load note data ONCE — editor is the source of truth after this
   useEffect(() => {
@@ -50,6 +51,7 @@ export function NoteWindow({ noteId }: NoteWindowProps) {
     let unlistenMove: (() => void) | undefined;
     let unlistenResize: (() => void) | undefined;
     let mounted = true;
+    let handleVisibilityFn: (() => void) | undefined;
 
     // Delay registration to skip initial window positioning events
     const initTimeout = setTimeout(async () => {
@@ -109,16 +111,17 @@ export function NoteWindow({ noteId }: NoteWindowProps) {
         });
 
         // Restore correct size when window becomes visible again (screen unlock)
-        const handleVisibility = async () => {
+        const handleVisibility = () => {
+          if (!mounted) return;
           if (document.visibilityState === "visible" && goodSize.current) {
-            // Small delay to let the OS finish restoring
-            setTimeout(async () => {
+            if (visibilityTimer.current) clearTimeout(visibilityTimer.current);
+            visibilityTimer.current = setTimeout(async () => {
+              if (!mounted) return;
               try {
                 const factor = await appWindow.scaleFactor();
                 const size = await appWindow.innerSize();
                 const currentW = Math.round(size.width / factor);
                 const currentH = Math.round(size.height / factor);
-                // If current size is much smaller than the last known good size, restore
                 if (
                   goodSize.current &&
                   (currentW < goodSize.current.width * 0.7 ||
@@ -138,6 +141,7 @@ export function NoteWindow({ noteId }: NoteWindowProps) {
         if (mounted) {
           unlistenMove = moveUn;
           unlistenResize = resizeUn;
+          handleVisibilityFn = handleVisibility;
         } else {
           moveUn();
           resizeUn();
@@ -153,8 +157,12 @@ export function NoteWindow({ noteId }: NoteWindowProps) {
       clearTimeout(initTimeout);
       if (moveTimer.current) clearTimeout(moveTimer.current);
       if (resizeTimer.current) clearTimeout(resizeTimer.current);
+      if (visibilityTimer.current) clearTimeout(visibilityTimer.current);
       unlistenMove?.();
       unlistenResize?.();
+      if (handleVisibilityFn) {
+        document.removeEventListener("visibilitychange", handleVisibilityFn);
+      }
     };
   }, [noteId]);
 
@@ -246,7 +254,6 @@ export function NoteWindow({ noteId }: NoteWindowProps) {
   }, []);
 
   const handleDeleteConfirm = useCallback(async () => {
-    setConfirmingDelete(false);
     if (saveTimeout.current) {
       clearTimeout(saveTimeout.current);
       saveTimeout.current = null;
@@ -255,12 +262,24 @@ export function NoteWindow({ noteId }: NoteWindowProps) {
       await invoke("delete_note_and_close", { id: noteId });
     } catch (e) {
       console.warn("delete_note_and_close failed:", e);
+      setConfirmingDelete(false);
     }
   }, [noteId]);
 
   const handleDeleteCancel = useCallback(() => {
     setConfirmingDelete(false);
   }, []);
+
+  // Keyboard shortcuts for delete confirmation
+  useEffect(() => {
+    if (!confirmingDelete) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") handleDeleteCancel();
+      else if (e.key === "Enter") handleDeleteConfirm();
+    };
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [confirmingDelete, handleDeleteConfirm, handleDeleteCancel]);
 
   if (!note) {
     return (

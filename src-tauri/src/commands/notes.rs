@@ -49,7 +49,9 @@ pub fn delete_note(app: AppHandle, state: State<'_, AppState>, id: String) -> Re
 }
 
 #[tauri::command]
-pub fn reorder_notes(state: State<'_, AppState>, ids: Vec<String>) -> Result<(), String> {
+pub fn reorder_notes(app: AppHandle, state: State<'_, AppState>, ids: Vec<String>) -> Result<(), String> {
     let conn = state.db.lock().map_err(|e| e.to_string())?;
-    notes::reorder_notes(&conn, &ids).map_err(|e| e.to_string())
+    notes::reorder_notes(&conn, &ids).map_err(|e| e.to_string())?;
+    emit_notes_changed(&app);
+    Ok(())
 }

@@ -42,8 +42,10 @@ export function TitleBar({ title, isPinned, onTitleChange, onTogglePin, onClose,
   const commitTitle = () => {
     setEditing(false);
     const trimmed = draft.trim();
-    if (trimmed !== title) {
+    if (trimmed && trimmed !== title) {
       onTitleChange(trimmed);
+    } else if (!trimmed && title) {
+      setDraft(title);
     }
   };
 
@@ -104,6 +106,7 @@ export function TitleBar({ title, isPinned, onTitleChange, onTogglePin, onClose,
               size="sm"
               className={styles.btn}
               onClick={onDelete}
+              aria-label="删除便签"
             >
               🗑
             </Button>
@@ -117,6 +120,7 @@ export function TitleBar({ title, isPinned, onTitleChange, onTogglePin, onClose,
               size="sm"
               className={styles.btn}
               onClick={onClose}
+              aria-label="关闭"
             >
               ✕
             </Button>

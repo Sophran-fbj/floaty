@@ -238,14 +238,21 @@ export function ManagerWindow() {
   // Refresh notes when any note state changes (Rust backend emits "notes-changed")
   useEffect(() => {
     let unlisten: (() => void) | undefined;
+    let mounted = true;
     let debounceTimer: ReturnType<typeof setTimeout>;
     listen("notes-changed", () => {
+      if (!mounted) return;
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => loadNotes(), 300);
     }).then((fn) => {
-      unlisten = fn;
+      if (mounted) {
+        unlisten = fn;
+      } else {
+        fn();
+      }
     });
     return () => {
+      mounted = false;
       clearTimeout(debounceTimer);
       unlisten?.();
     };
@@ -340,9 +347,9 @@ export function ManagerWindow() {
     setConfirmDeleteId(null);
     try {
       await invoke("delete_note_and_close", { id });
-      loadNotes();
     } catch (err) {
       console.warn("Failed to delete note:", err);
+      loadNotes();
     }
   }, [confirmDeleteId, loadNotes]);
 
@@ -368,13 +375,15 @@ export function ManagerWindow() {
       const newIndex = notes.findIndex((n) => n.id === over.id);
       if (oldIndex === -1 || newIndex === -1) return;
 
+      const prevNotes = notes;
       const reordered = arrayMove(notes, oldIndex, newIndex);
       setNotes(reordered);
 
       const ids = reordered.map((n) => n.id);
-      invoke("reorder_notes", { ids }).catch((e: unknown) =>
-        console.warn("Failed to reorder notes:", e),
-      );
+      invoke("reorder_notes", { ids }).catch((e: unknown) => {
+        console.warn("Failed to reorder notes:", e);
+        setNotes(prevNotes);
+      });
     },
     [notes],
   );

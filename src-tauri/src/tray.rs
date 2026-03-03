@@ -35,7 +35,7 @@ pub fn create_tray(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
                 "manage" => handle_manage(app),
                 "show_all" => handle_show_all(app),
                 "hide_all" => handle_hide_all(app),
-                "quit" => std::process::exit(0),
+                "quit" => app.exit(0),
                 _ => {}
             }
         })
@@ -94,12 +94,7 @@ fn handle_show_all(app: &AppHandle) {
     let state = app.state::<crate::state::AppState>();
     let notes = {
         let conn = state.db.lock().unwrap_or_else(|e| e.into_inner());
-        crate::db::notes::get_all_notes(&conn).unwrap_or_default()
-    };
-
-    // Batch update: mark all notes as visible in one lock
-    {
-        let conn = state.db.lock().unwrap_or_else(|e| e.into_inner());
+        let notes = crate::db::notes::get_all_notes(&conn).unwrap_or_default();
         for note in &notes {
             let _ = crate::db::notes::update_note(
                 &conn,
@@ -110,9 +105,9 @@ fn handle_show_all(app: &AppHandle) {
                 },
             );
         }
-    }
+        notes
+    };
 
-    // Then show/create windows using shared logic
     for note in &notes {
         let _ = crate::commands::windows::build_note_window(app, note);
     }
@@ -124,11 +119,7 @@ fn handle_hide_all(app: &AppHandle) {
     let state = app.state::<crate::state::AppState>();
     let notes = {
         let conn = state.db.lock().unwrap_or_else(|e| e.into_inner());
-        crate::db::notes::get_all_notes(&conn).unwrap_or_default()
-    };
-    // Batch DB update: mark all as not visible
-    {
-        let conn = state.db.lock().unwrap_or_else(|e| e.into_inner());
+        let notes = crate::db::notes::get_all_notes(&conn).unwrap_or_default();
         for note in &notes {
             let _ = crate::db::notes::update_note(
                 &conn,
@@ -139,8 +130,9 @@ fn handle_hide_all(app: &AppHandle) {
                 },
             );
         }
-    }
-    // Then hide windows
+        notes
+    };
+
     for note in &notes {
         let label = format!("note-{}", note.id);
         if let Some(window) = app.get_webview_window(&label) {
