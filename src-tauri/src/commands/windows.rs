@@ -130,7 +130,7 @@ pub async fn close_note_window(
     Ok(())
 }
 
-/// Delete a note from DB and close its window
+/// Soft-delete a note (move to trash) and close its window
 #[tauri::command]
 pub async fn delete_note_and_close(
     app: AppHandle,
@@ -139,7 +139,7 @@ pub async fn delete_note_and_close(
 ) -> Result<(), String> {
     {
         let conn = state.db.lock().map_err(|e| e.to_string())?;
-        notes::delete_note(&conn, &id).map_err(|e| e.to_string())?;
+        notes::soft_delete_note(&conn, &id).map_err(|e| e.to_string())?;
     }
 
     let label = format!("note-{}", id);

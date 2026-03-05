@@ -14,6 +14,8 @@ pub struct Note {
     pub is_visible: bool,
     pub is_pinned: bool,
     pub sort_order: i32,
+    pub opacity: f64,
+    pub deleted_at: Option<String>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -30,10 +32,11 @@ pub struct UpdateNote {
     pub is_visible: Option<bool>,
     pub is_pinned: Option<bool>,
     pub sort_order: Option<i32>,
+    pub opacity: Option<f64>,
 }
 
 const SELECT_COLS: &str =
-    "id, title, content, pos_x, pos_y, width, height, font_size, is_visible, is_pinned, sort_order, created_at, updated_at";
+    "id, title, content, pos_x, pos_y, width, height, font_size, is_visible, is_pinned, sort_order, opacity, deleted_at, created_at, updated_at";
 
 fn row_to_note(row: &rusqlite::Row) -> rusqlite::Result<Note> {
     Ok(Note {
@@ -48,8 +51,10 @@ fn row_to_note(row: &rusqlite::Row) -> rusqlite::Result<Note> {
         is_visible: row.get::<_, i32>(8)? != 0,
         is_pinned: row.get::<_, i32>(9)? != 0,
         sort_order: row.get(10)?,
-        created_at: row.get(11)?,
-        updated_at: row.get(12)?,
+        opacity: row.get(11)?,
+        deleted_at: row.get(12)?,
+        created_at: row.get(13)?,
+        updated_at: row.get(14)?,
     })
 }
 
@@ -74,11 +79,44 @@ pub fn get_note(conn: &Connection, id: &str) -> Result<Note, rusqlite::Error> {
 
 pub fn get_all_notes(conn: &Connection) -> Result<Vec<Note>, rusqlite::Error> {
     let mut stmt = conn.prepare(&format!(
-        "SELECT {} FROM notes ORDER BY sort_order ASC, created_at DESC",
+        "SELECT {} FROM notes WHERE deleted_at IS NULL ORDER BY sort_order ASC, created_at DESC",
         SELECT_COLS
     ))?;
     let notes = stmt.query_map([], row_to_note)?;
     notes.collect()
+}
+
+pub fn get_deleted_notes(conn: &Connection) -> Result<Vec<Note>, rusqlite::Error> {
+    let mut stmt = conn.prepare(&format!(
+        "SELECT {} FROM notes WHERE deleted_at IS NOT NULL ORDER BY deleted_at DESC",
+        SELECT_COLS
+    ))?;
+    let notes = stmt.query_map([], row_to_note)?;
+    notes.collect()
+}
+
+pub fn soft_delete_note(conn: &Connection, id: &str) -> Result<(), rusqlite::Error> {
+    conn.execute(
+        "UPDATE notes SET deleted_at = datetime('now'), is_visible = 0 WHERE id = ?1",
+        params![id],
+    )?;
+    Ok(())
+}
+
+pub fn restore_note(conn: &Connection, id: &str) -> Result<(), rusqlite::Error> {
+    conn.execute(
+        "UPDATE notes SET deleted_at = NULL WHERE id = ?1",
+        params![id],
+    )?;
+    Ok(())
+}
+
+pub fn purge_old_deleted_notes(conn: &Connection, days: i32) -> Result<usize, rusqlite::Error> {
+    let count = conn.execute(
+        "DELETE FROM notes WHERE deleted_at IS NOT NULL AND deleted_at < datetime('now', ?1)",
+        params![format!("-{} days", days)],
+    )?;
+    Ok(count)
 }
 
 /// Fire-and-forget update — does NOT return the updated note.
@@ -131,6 +169,10 @@ pub fn update_note(
     if let Some(sort_order) = data.sort_order {
         sets.push("sort_order = ?");
         values.push(Box::new(sort_order));
+    }
+    if let Some(opacity) = data.opacity {
+        sets.push("opacity = ?");
+        values.push(Box::new(opacity));
     }
 
     if !sets.is_empty() {

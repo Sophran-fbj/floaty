@@ -10,6 +10,8 @@ export interface Note {
   is_visible: boolean;
   is_pinned: boolean;
   sort_order: number;
+  opacity: number;
+  deleted_at: string | null;
   created_at: string;
   updated_at: string;
 }

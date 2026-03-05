@@ -43,5 +43,11 @@ pub fn init_db(app_data_dir: &std::path::Path) -> Result<Connection, rusqlite::E
     // Ensure sort_order column exists for DBs created without it
     let _ = conn.execute("ALTER TABLE notes ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0", []);
 
+    // Ensure opacity column exists for DBs created without it
+    let _ = conn.execute("ALTER TABLE notes ADD COLUMN opacity REAL NOT NULL DEFAULT 1.0", []);
+
+    // Ensure deleted_at column exists for soft-delete (trash) support
+    let _ = conn.execute("ALTER TABLE notes ADD COLUMN deleted_at TEXT DEFAULT NULL", []);
+
     Ok(conn)
 }

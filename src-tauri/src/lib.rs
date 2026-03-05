@@ -30,6 +30,13 @@ pub fn run() {
             };
             app.manage(app_state);
 
+            // Auto-purge trash notes older than 7 days
+            {
+                let state = app.state::<AppState>();
+                let conn = state.db.lock().unwrap_or_else(|e| e.into_inner());
+                let _ = db::notes::purge_old_deleted_notes(&conn, 7);
+            }
+
             // Create system tray
             let handle = app.handle().clone();
             tray::create_tray(&handle).expect("failed to create tray");
@@ -81,6 +88,10 @@ pub fn run() {
             commands::notes::update_note,
             commands::notes::delete_note,
             commands::notes::reorder_notes,
+            commands::notes::get_deleted_notes,
+            commands::notes::restore_note,
+            commands::notes::empty_trash,
+            commands::notes::permanently_delete_note,
             commands::windows::open_note_window,
             commands::windows::show_note_window,
             commands::windows::close_note_window,

@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { ArrowUpToLine } from "lucide-react";
+import { ArrowUpToLine, Trash2, RotateCcw, X } from "lucide-react";
 import {
   DndContext,
   closestCenter,
@@ -131,7 +131,7 @@ function SortableNoteCard({
             align="center"
             onClick={(e) => e.stopPropagation()}
           >
-            <p className="text-sm text-muted-foreground mb-3">确定删除这个便签？</p>
+            <p className="text-sm text-muted-foreground mb-3">移到回收站？</p>
             <div className="flex justify-center gap-2">
               <button
                 className="px-3 py-1.5 text-xs rounded-md bg-muted text-muted-foreground hover:bg-muted/70 transition-colors cursor-pointer"
@@ -200,7 +200,10 @@ function NoteCardContent({
 
 export function ManagerWindow() {
   const [notes, setNotes] = useState<Note[]>([]);
+  const [trashNotes, setTrashNotes] = useState<Note[]>([]);
+  const [activeTab, setActiveTab] = useState<"notes" | "trash">("notes");
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [confirmEmptyTrash, setConfirmEmptyTrash] = useState(false);
   const [activeNote, setActiveNote] = useState<Note | null>(null);
   const dragRef = useRef<HTMLDivElement>(null);
 
@@ -219,16 +222,28 @@ export function ManagerWindow() {
     }
   }, []);
 
+  const loadTrashNotes = useCallback(async () => {
+    try {
+      const data = await invoke<Note[]>("get_deleted_notes");
+      setTrashNotes(data);
+    } catch (e) {
+      console.warn("Failed to load trash notes:", e);
+    }
+  }, []);
+
   useEffect(() => {
     loadNotes();
-  }, [loadNotes]);
+    loadTrashNotes();
+  }, [loadNotes, loadTrashNotes]);
 
   // Refresh notes when the window becomes visible again (after hide/show cycle)
   useEffect(() => {
     const onVisibility = async () => {
       if (document.visibilityState === "visible") {
         loadNotes();
+        loadTrashNotes();
         setConfirmDeleteId(null);
+        setConfirmEmptyTrash(false);
         // Fix DPI scaling after screen lock/unlock
         try {
           const { getCurrentWebviewWindow } = await import("@tauri-apps/api/webviewWindow");
@@ -245,7 +260,7 @@ export function ManagerWindow() {
     };
     document.addEventListener("visibilitychange", onVisibility);
     return () => document.removeEventListener("visibilitychange", onVisibility);
-  }, [loadNotes]);
+  }, [loadNotes, loadTrashNotes]);
 
   // Refresh notes when any note state changes (Rust backend emits "notes-changed")
   useEffect(() => {
@@ -255,7 +270,10 @@ export function ManagerWindow() {
     listen("notes-changed", () => {
       if (!mounted) return;
       clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(() => loadNotes(), 300);
+      debounceTimer = setTimeout(() => {
+        loadNotes();
+        loadTrashNotes();
+      }, 300);
     }).then((fn) => {
       if (mounted) {
         unlisten = fn;
@@ -380,6 +398,31 @@ export function ManagerWindow() {
     setConfirmDeleteId(null);
   }, []);
 
+  const handleRestoreNote = useCallback(async (id: string) => {
+    try {
+      await invoke("restore_note", { id });
+    } catch (e) {
+      console.warn("Failed to restore note:", e);
+    }
+  }, []);
+
+  const handlePermanentDelete = useCallback(async (id: string) => {
+    try {
+      await invoke("permanently_delete_note", { id });
+    } catch (e) {
+      console.warn("Failed to permanently delete note:", e);
+    }
+  }, []);
+
+  const handleEmptyTrash = useCallback(async () => {
+    try {
+      await invoke("empty_trash");
+      setConfirmEmptyTrash(false);
+    } catch (e) {
+      console.warn("Failed to empty trash:", e);
+    }
+  }, []);
+
   const handleDndStart = useCallback(
     (event: DragStartEvent) => {
       const found = notes.find((n) => n.id === event.active.id);
@@ -447,8 +490,15 @@ export function ManagerWindow() {
         className={styles.titleBar}
         onMouseDown={handleDragStart}
       >
-        <span className={styles.titleText}>管理便签</span>
+        <span className={styles.titleText}>{activeTab === "notes" ? "管理便签" : "回收站"}</span>
         <div className={styles.titleActions}>
+          <button
+            className={`${styles.iconBtn} ${activeTab === "trash" ? styles.trashActive : ""}`}
+            onClick={() => setActiveTab(activeTab === "notes" ? "trash" : "notes")}
+            title={activeTab === "notes" ? "回收站" : "返回便签"}
+          >
+            <Trash2 size={14} />
+          </button>
           <button
             className={styles.iconBtn}
             onClick={handleNewNote}
@@ -525,67 +575,156 @@ export function ManagerWindow() {
       </div>
 
       <div className={styles.content}>
-        {notes.length === 0 ? (
-          <div className={styles.emptyState}>
-            <svg
-              width="32"
-              height="32"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z" />
-              <path d="M15 3v4a2 2 0 0 0 2 2h4" />
-            </svg>
-            <span>暂无便签</span>
-          </div>
-        ) : (
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragStart={handleDndStart}
-            onDragEnd={handleDndEnd}
-          >
-            <SortableContext
-              items={notes.map((n) => n.id)}
-              strategy={verticalListSortingStrategy}
-            >
-              {notes.map((note) => (
-                <SortableNoteCard
-                  key={note.id}
-                  note={note}
-                  confirmDeleteId={confirmDeleteId}
-                  onOpen={handleOpenNote}
-                  onDeleteRequest={handleDeleteRequest}
-                  onDeleteConfirm={handleDeleteConfirm}
-                  onDeleteCancel={handleDeleteCancel}
-                  formatTime={formatTime}
-                  getNoteTitle={getNoteTitle}
-                />
-              ))}
-            </SortableContext>
-            <DragOverlay dropAnimation={{ duration: 200, easing: "ease" }}>
-              {activeNote ? (
-                <div
-                  className={`${styles.noteCard} ${styles.dragOverlay} ${activeNote.is_visible ? styles.noteCardOpen : ""} ${activeNote.is_pinned ? styles.noteCardPinned : ""}`}
+        {activeTab === "notes" ? (
+          <>
+            {notes.length === 0 ? (
+              <div className={styles.emptyState}>
+                <svg
+                  width="32"
+                  height="32"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
                 >
-                  <NoteCardContent
-                    note={activeNote}
-                    formatTime={formatTime}
-                    getNoteTitle={getNoteTitle}
-                  />
+                  <path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z" />
+                  <path d="M15 3v4a2 2 0 0 0 2 2h4" />
+                </svg>
+                <span>暂无便签</span>
+              </div>
+            ) : (
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragStart={handleDndStart}
+                onDragEnd={handleDndEnd}
+              >
+                <SortableContext
+                  items={notes.map((n) => n.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  {notes.map((note) => (
+                    <SortableNoteCard
+                      key={note.id}
+                      note={note}
+                      confirmDeleteId={confirmDeleteId}
+                      onOpen={handleOpenNote}
+                      onDeleteRequest={handleDeleteRequest}
+                      onDeleteConfirm={handleDeleteConfirm}
+                      onDeleteCancel={handleDeleteCancel}
+                      formatTime={formatTime}
+                      getNoteTitle={getNoteTitle}
+                    />
+                  ))}
+                </SortableContext>
+                <DragOverlay dropAnimation={{ duration: 200, easing: "ease" }}>
+                  {activeNote ? (
+                    <div
+                      className={`${styles.noteCard} ${styles.dragOverlay} ${activeNote.is_visible ? styles.noteCardOpen : ""} ${activeNote.is_pinned ? styles.noteCardPinned : ""}`}
+                    >
+                      <NoteCardContent
+                        note={activeNote}
+                        formatTime={formatTime}
+                        getNoteTitle={getNoteTitle}
+                      />
+                    </div>
+                  ) : null}
+                </DragOverlay>
+              </DndContext>
+            )}
+          </>
+        ) : (
+          <>
+            {trashNotes.length === 0 ? (
+              <div className={styles.emptyState}>
+                <Trash2 size={32} strokeWidth={1.5} />
+                <span>回收站为空</span>
+              </div>
+            ) : (
+              <>
+                {trashNotes.map((note) => (
+                  <div key={note.id} className={`${styles.noteCard} ${styles.trashCard}`}>
+                    <div className={styles.noteIcon}>
+                      <svg
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z" />
+                        <path d="M15 3v4a2 2 0 0 0 2 2h4" />
+                      </svg>
+                    </div>
+                    <div className={styles.noteInfo}>
+                      <div className={styles.noteTitle}>{getNoteTitle(note)}</div>
+                      <div className={styles.noteTime}>
+                        删除于 {note.deleted_at ? formatTime(note.deleted_at) : ""}
+                      </div>
+                    </div>
+                    <div className={styles.trashActions}>
+                      <button
+                        className={`${styles.smallBtn} ${styles.restoreBtn}`}
+                        onClick={() => handleRestoreNote(note.id)}
+                        title="恢复"
+                      >
+                        <RotateCcw size={14} />
+                      </button>
+                      <button
+                        className={`${styles.smallBtn} ${styles.deleteBtn}`}
+                        onClick={() => handlePermanentDelete(note.id)}
+                        title="永久删除"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                <div className={styles.emptyTrashArea}>
+                  {confirmEmptyTrash ? (
+                    <div className={styles.emptyTrashConfirm}>
+                      <span>确定清空回收站？此操作不可撤销</span>
+                      <div className={styles.emptyTrashBtns}>
+                        <button
+                          className={styles.emptyTrashCancel}
+                          onClick={() => setConfirmEmptyTrash(false)}
+                        >
+                          取消
+                        </button>
+                        <button
+                          className={styles.emptyTrashConfirmBtn}
+                          onClick={handleEmptyTrash}
+                        >
+                          清空
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      className={styles.emptyTrashBtn}
+                      onClick={() => setConfirmEmptyTrash(true)}
+                    >
+                      清空回收站
+                    </button>
+                  )}
                 </div>
-              ) : null}
-            </DragOverlay>
-          </DndContext>
+              </>
+            )}
+          </>
         )}
       </div>
 
       <div className={styles.statusBar}>
-        <span>共 {notes.length} 个便签</span>
+        <span>
+          {activeTab === "notes"
+            ? `共 ${notes.length} 个便签`
+            : `回收站 ${trashNotes.length} 个便签`}
+        </span>
       </div>
     </div>
   );

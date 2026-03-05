@@ -22,6 +22,8 @@ export function NoteWindow({ noteId }: NoteWindowProps) {
   const resizeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const visibilityTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const [isHovered, setIsHovered] = useState(false);
+
   // Load note data ONCE — editor is the source of truth after this
   useEffect(() => {
     invoke<Note>("get_note", { id: noteId })
@@ -210,6 +212,16 @@ export function NoteWindow({ noteId }: NoteWindowProps) {
     [noteId],
   );
 
+  const handleOpacityChange = useCallback(
+    (newOpacity: number) => {
+      setNote((prev) => (prev ? { ...prev, opacity: newOpacity } : prev));
+      invoke("update_note", { id: noteId, data: { opacity: newOpacity } }).catch(
+        console.warn,
+      );
+    },
+    [noteId],
+  );
+
   const handleTogglePin = useCallback(() => {
     setNote((prev) => {
       if (!prev) return prev;
@@ -316,6 +328,8 @@ export function NoteWindow({ noteId }: NoteWindowProps) {
   return (
     <TooltipProvider delayDuration={300} disableHoverableContent>
       <div
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
         style={{
           display: "flex",
           flexDirection: "column",
@@ -323,6 +337,8 @@ export function NoteWindow({ noteId }: NoteWindowProps) {
           overflow: "hidden",
           backgroundColor: "#FFF9C4",
           boxShadow: "0 2px 12px rgba(0,0,0,0.12)",
+          opacity: isHovered ? 1 : note.opacity,
+          transition: "opacity 0.2s ease",
         }}
       >
         <TitleBar
@@ -346,7 +362,7 @@ export function NoteWindow({ noteId }: NoteWindowProps) {
               fontSize: 13,
             }}
           >
-            <span style={{ color: "rgba(0,0,0,0.7)" }}>确定删除？</span>
+            <span style={{ color: "rgba(0,0,0,0.7)" }}>移到回收站？</span>
             <button
               onClick={handleDeleteConfirm}
               style={{
@@ -382,7 +398,7 @@ export function NoteWindow({ noteId }: NoteWindowProps) {
           onChange={handleContentChange}
           onEditorReady={handleEditorReady}
         />
-        <NoteToolbar editor={editor} fontSize={note.font_size} onFontSizeChange={handleFontSizeChange} />
+        <NoteToolbar editor={editor} fontSize={note.font_size} onFontSizeChange={handleFontSizeChange} opacity={note.opacity} onOpacityChange={handleOpacityChange} />
       </div>
     </TooltipProvider>
   );

@@ -213,3 +213,109 @@
   border: 1px solid rgba(0, 0, 0, 0.08);
   opacity: 0.95;
 }
+
+.trashActive {
+  background: rgba(220, 38, 38, 0.08);
+  color: #dc2626;
+}
+
+.trashCard::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  border-radius: 8px 0 0 8px;
+  background: #bdbdbd;
+}
+
+.trashCard {
+  cursor: default;
+}
+
+.trashCard .noteIcon {
+  background: #f0f0f0;
+  color: rgba(0, 0, 0, 0.3);
+}
+
+.trashActions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.trashCard:hover .trashActions {
+  opacity: 1;
+}
+
+.restoreBtn:hover {
+  background: rgba(76, 175, 80, 0.08);
+  color: #4caf50;
+}
+
+.emptyTrashArea {
+  display: flex;
+  justify-content: center;
+  padding: 12px 0;
+}
+
+.emptyTrashBtn {
+  padding: 6px 16px;
+  font-size: 12px;
+  border: 1px solid rgba(220, 38, 38, 0.2);
+  border-radius: 6px;
+  background: transparent;
+  color: #dc2626;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.emptyTrashBtn:hover {
+  background: rgba(220, 38, 38, 0.06);
+}
+
+.emptyTrashConfirm {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.emptyTrashBtns {
+  display: flex;
+  gap: 8px;
+}
+
+.emptyTrashCancel {
+  padding: 4px 12px;
+  font-size: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.emptyTrashCancel:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.emptyTrashConfirmBtn {
+  padding: 4px 12px;
+  font-size: 12px;
+  border: none;
+  border-radius: 4px;
+  background: #dc2626;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.emptyTrashConfirmBtn:hover {
+  background: #b91c1c;
+}

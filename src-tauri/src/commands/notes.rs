@@ -55,3 +55,37 @@ pub fn reorder_notes(app: AppHandle, state: State<'_, AppState>, ids: Vec<String
     emit_notes_changed(&app);
     Ok(())
 }
+
+#[tauri::command]
+pub fn get_deleted_notes(state: State<'_, AppState>) -> Result<Vec<Note>, String> {
+    let conn = state.db.lock().map_err(|e| e.to_string())?;
+    notes::get_deleted_notes(&conn).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn restore_note(app: AppHandle, state: State<'_, AppState>, id: String) -> Result<(), String> {
+    let conn = state.db.lock().map_err(|e| e.to_string())?;
+    notes::restore_note(&conn, &id).map_err(|e| e.to_string())?;
+    emit_notes_changed(&app);
+    Ok(())
+}
+
+#[tauri::command]
+pub fn empty_trash(app: AppHandle, state: State<'_, AppState>) -> Result<(), String> {
+    let conn = state.db.lock().map_err(|e| e.to_string())?;
+    // Delete all notes in trash
+    let deleted = notes::get_deleted_notes(&conn).map_err(|e| e.to_string())?;
+    for note in &deleted {
+        notes::delete_note(&conn, &note.id).map_err(|e| e.to_string())?;
+    }
+    emit_notes_changed(&app);
+    Ok(())
+}
+
+#[tauri::command]
+pub fn permanently_delete_note(app: AppHandle, state: State<'_, AppState>, id: String) -> Result<(), String> {
+    let conn = state.db.lock().map_err(|e| e.to_string())?;
+    notes::delete_note(&conn, &id).map_err(|e| e.to_string())?;
+    emit_notes_changed(&app);
+    Ok(())
+}
