@@ -11,6 +11,8 @@ interface NoteToolbarProps {
   editor: Editor | null;
   fontSize: number;
   onFontSizeChange: (size: number) => void;
+  opacity: number;
+  onOpacityChange: (opacity: number) => void;
 }
 
 type ToolbarItem = {
@@ -35,7 +37,7 @@ const BLOCK_FORMAT_ITEMS: ToolbarItem[] = [
   { label: "\u2611", command: "toggleTaskList", title: "任务列表", mark: "taskList", noActive: true },
 ];
 
-export function NoteToolbar({ editor, fontSize, onFontSizeChange }: NoteToolbarProps) {
+export function NoteToolbar({ editor, fontSize, onFontSizeChange, opacity, onOpacityChange }: NoteToolbarProps) {
   if (!editor) return null;
 
   const renderItem = (item: ToolbarItem) => {
@@ -102,6 +104,36 @@ export function NoteToolbar({ editor, fontSize, onFontSizeChange }: NoteToolbarP
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom">增大字体</TooltipContent>
+          </Tooltip>
+        </div>
+        <div className={styles.separator} />
+        <div className={styles.opacityGroup}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className={styles.btn}
+                onClick={() => onOpacityChange(Math.max(0.2, Math.round((opacity - 0.1) * 10) / 10))}
+              >
+                ◐
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">降低透明度</TooltipContent>
+          </Tooltip>
+          <span className={styles.opacityLabel}>{Math.round(opacity * 100)}%</span>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className={styles.btn}
+                onClick={() => onOpacityChange(Math.min(1.0, Math.round((opacity + 0.1) * 10) / 10))}
+              >
+                ●
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">增加透明度</TooltipContent>
           </Tooltip>
         </div>
       </div>
