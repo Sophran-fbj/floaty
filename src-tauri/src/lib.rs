@@ -4,6 +4,7 @@ mod state;
 mod tray;
 
 use state::AppState;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
 use tauri::{Manager, WebviewUrl, WebviewWindowBuilder};
 
@@ -27,6 +28,7 @@ pub fn run() {
             let conn = db::init_db(&app_data_dir).expect("failed to initialize database");
             let app_state = AppState {
                 db: Mutex::new(conn),
+                should_exit: AtomicBool::new(false),
             };
             app.manage(app_state);
 
@@ -101,10 +103,17 @@ pub fn run() {
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
-        .run(|_app, event| {
-            // Keep the app alive when all windows are closed (tray stays active).
+        .run(|app, event| {
             if let tauri::RunEvent::ExitRequested { api, .. } = event {
-                api.prevent_exit();
+                // Allow exit when explicitly requested (e.g. tray "quit" menu item).
+                // Otherwise keep the app alive for the tray icon.
+                let should_exit = app
+                    .try_state::<AppState>()
+                    .map(|s| s.should_exit.load(Ordering::SeqCst))
+                    .unwrap_or(false);
+                if !should_exit {
+                    api.prevent_exit();
+                }
             }
         });
 }

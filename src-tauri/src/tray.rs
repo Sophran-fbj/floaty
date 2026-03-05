@@ -35,7 +35,12 @@ pub fn create_tray(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
                 "manage" => handle_manage(app),
                 "show_all" => handle_show_all(app),
                 "hide_all" => handle_hide_all(app),
-                "quit" => app.exit(0),
+                "quit" => {
+                    app.state::<crate::state::AppState>()
+                        .should_exit
+                        .store(true, std::sync::atomic::Ordering::SeqCst);
+                    app.exit(0);
+                }
                 _ => {}
             }
         })
