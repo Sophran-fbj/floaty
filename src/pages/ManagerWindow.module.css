@@ -3,7 +3,7 @@
   flex-direction: column;
   height: 100vh;
   overflow: hidden;
-  background: #f8f5ef;
+  background: var(--manager-bg);
 }
 
 .titleBar {
@@ -11,8 +11,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 10px 14px;
-  background: rgba(255, 255, 255, 0.6);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  background: var(--manager-titlebar-bg);
+  border-bottom: 1px solid var(--manager-titlebar-border);
   user-select: none;
   cursor: grab;
 }
@@ -24,7 +24,7 @@
 .titleText {
   font-size: 14px;
   font-weight: 600;
-  color: rgba(0, 0, 0, 0.75);
+  color: var(--manager-title-color);
   letter-spacing: 0.3px;
 }
 
@@ -43,14 +43,14 @@
   border: none;
   border-radius: 6px;
   background: transparent;
-  color: rgba(0, 0, 0, 0.45);
+  color: var(--manager-icon-color);
   cursor: pointer;
   transition: all 0.15s;
 }
 
 .iconBtn:hover {
-  background: rgba(0, 0, 0, 0.06);
-  color: rgba(0, 0, 0, 0.7);
+  background: var(--manager-icon-hover-bg);
+  color: var(--manager-icon-hover-color);
 }
 
 .closeBtn:hover {
@@ -72,15 +72,15 @@
   padding: 10px 12px;
   margin-bottom: 6px;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.7);
-  border: 1px solid rgba(0, 0, 0, 0.04);
+  background: var(--manager-card-bg);
+  border: 1px solid var(--manager-card-border);
   cursor: pointer;
   transition: all 0.15s;
 }
 
 .noteCard:hover {
-  background: rgba(255, 255, 255, 0.9);
-  border-color: rgba(0, 0, 0, 0.08);
+  background: var(--manager-card-hover-bg);
+  border-color: var(--manager-card-hover-border);
 }
 
 .noteCardOpen::before,
@@ -113,8 +113,8 @@
   width: 36px;
   height: 36px;
   border-radius: 8px;
-  background: #FFF9C4;
-  color: rgba(0, 0, 0, 0.4);
+  background: var(--manager-note-icon-bg);
+  color: var(--manager-note-icon-color);
   flex-shrink: 0;
 }
 
@@ -126,7 +126,7 @@
 .noteTitle {
   font-size: 13px;
   font-weight: 500;
-  color: rgba(0, 0, 0, 0.8);
+  color: var(--manager-note-title-color);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -134,7 +134,7 @@
 
 .noteTime {
   font-size: 11px;
-  color: rgba(0, 0, 0, 0.35);
+  color: var(--manager-note-time-color);
   margin-top: 2px;
 }
 
@@ -159,14 +159,14 @@
   border: none;
   border-radius: 5px;
   background: transparent;
-  color: rgba(0, 0, 0, 0.35);
+  color: var(--manager-btn-color);
   cursor: pointer;
   transition: all 0.15s;
 }
 
 .smallBtn:hover {
-  background: rgba(0, 0, 0, 0.06);
-  color: rgba(0, 0, 0, 0.6);
+  background: var(--manager-btn-hover-bg);
+  color: var(--manager-btn-hover-color);
 }
 
 .deleteBtn:hover {
@@ -175,7 +175,7 @@
 }
 
 .pinnedIcon {
-  color: rgba(0, 0, 0, 0.25);
+  color: var(--manager-pinned-color);
   flex-shrink: 0;
 }
 
@@ -185,7 +185,7 @@
   align-items: center;
   justify-content: center;
   height: 200px;
-  color: rgba(0, 0, 0, 0.3);
+  color: var(--manager-empty-color);
   font-size: 13px;
   gap: 8px;
 }
@@ -195,10 +195,10 @@
   align-items: center;
   justify-content: space-between;
   padding: 6px 14px;
-  background: rgba(255, 255, 255, 0.4);
-  border-top: 1px solid rgba(0, 0, 0, 0.04);
+  background: var(--manager-statusbar-bg);
+  border-top: 1px solid var(--manager-statusbar-border);
   font-size: 11px;
-  color: rgba(0, 0, 0, 0.35);
+  color: var(--manager-statusbar-color);
 }
 
 .dragging {
@@ -207,10 +207,10 @@
 
 .dragOverlay {
   transform: scale(1.1);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--manager-overlay-shadow);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.95);
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: var(--manager-overlay-bg);
+  border: 1px solid var(--manager-overlay-border);
   opacity: 0.95;
 }
 
@@ -235,8 +235,8 @@
 }
 
 .trashCard .noteIcon {
-  background: #f0f0f0;
-  color: rgba(0, 0, 0, 0.3);
+  background: var(--manager-trash-icon-bg);
+  color: var(--manager-trash-icon-color);
 }
 
 .trashActions {
@@ -265,7 +265,7 @@
 .emptyTrashBtn {
   padding: 6px 16px;
   font-size: 12px;
-  border: 1px solid rgba(220, 38, 38, 0.2);
+  border: 1px solid var(--manager-trash-btn-border);
   border-radius: 6px;
   background: transparent;
   color: #dc2626;
@@ -274,7 +274,7 @@
 }
 
 .emptyTrashBtn:hover {
-  background: rgba(220, 38, 38, 0.06);
+  background: var(--manager-trash-btn-hover-bg);
 }
 
 .emptyTrashConfirm {
@@ -283,7 +283,7 @@
   align-items: center;
   gap: 8px;
   font-size: 12px;
-  color: rgba(0, 0, 0, 0.6);
+  color: var(--manager-trash-confirm-color);
 }
 
 .emptyTrashBtns {
@@ -294,15 +294,16 @@
 .emptyTrashCancel {
   padding: 4px 12px;
   font-size: 12px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--manager-trash-cancel-border);
   border-radius: 4px;
   background: transparent;
+  color: var(--manager-trash-confirm-color);
   cursor: pointer;
   transition: all 0.15s;
 }
 
 .emptyTrashCancel:hover {
-  background: rgba(0, 0, 0, 0.04);
+  background: var(--manager-trash-cancel-hover-bg);
 }
 
 .emptyTrashConfirmBtn {

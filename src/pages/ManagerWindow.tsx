@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { ArrowUpToLine, Trash2, RotateCcw, X } from "lucide-react";
+import { ArrowUpToLine, Trash2, RotateCcw, X, Sun, Moon } from "lucide-react";
 import {
   DndContext,
   closestCenter,
@@ -205,6 +205,11 @@ export function ManagerWindow() {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [confirmEmptyTrash, setConfirmEmptyTrash] = useState(false);
   const [activeNote, setActiveNote] = useState<Note | null>(null);
+  const [isDark, setIsDark] = useState(() => {
+    const saved = localStorage.getItem("manager-theme");
+    if (saved) return saved === "dark";
+    return window.matchMedia("(prefers-color-scheme: dark)").matches;
+  });
   const dragRef = useRef<HTMLDivElement>(null);
 
   const sensors = useSensors(
@@ -360,6 +365,14 @@ export function ManagerWindow() {
     } catch {}
   }, []);
 
+  const toggleTheme = useCallback(() => {
+    setIsDark((prev) => {
+      const next = !prev;
+      localStorage.setItem("manager-theme", next ? "dark" : "light");
+      return next;
+    });
+  }, []);
+
   const handleNewNote = useCallback(async () => {
     try {
       const note = await invoke<Note>("create_note");
@@ -484,7 +497,7 @@ export function ManagerWindow() {
   };
 
   return (
-    <div className={styles.container}>
+    <div className={`${styles.container} ${isDark ? "dark" : ""}`}>
       <div
         ref={dragRef}
         className={styles.titleBar}
@@ -498,6 +511,13 @@ export function ManagerWindow() {
             title={activeTab === "notes" ? "回收站" : "返回便签"}
           >
             <Trash2 size={14} />
+          </button>
+          <button
+            className={styles.iconBtn}
+            onClick={toggleTheme}
+            title={isDark ? "切换亮色模式" : "切换暗色模式"}
+          >
+            {isDark ? <Sun size={14} /> : <Moon size={14} />}
           </button>
           <button
             className={styles.iconBtn}

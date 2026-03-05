@@ -48,6 +48,42 @@
 :root {
     --radius: 0.625rem;
     --background: oklch(1 0 0);
+
+    /* Manager window variables - Light */
+    --manager-bg: #f8f5ef;
+    --manager-titlebar-bg: rgba(255, 255, 255, 0.6);
+    --manager-titlebar-border: rgba(0, 0, 0, 0.06);
+    --manager-title-color: rgba(0, 0, 0, 0.75);
+    --manager-icon-color: rgba(0, 0, 0, 0.45);
+    --manager-icon-hover-bg: rgba(0, 0, 0, 0.06);
+    --manager-icon-hover-color: rgba(0, 0, 0, 0.7);
+    --manager-card-bg: rgba(255, 255, 255, 0.7);
+    --manager-card-border: rgba(0, 0, 0, 0.04);
+    --manager-card-hover-bg: rgba(255, 255, 255, 0.9);
+    --manager-card-hover-border: rgba(0, 0, 0, 0.08);
+    --manager-note-icon-bg: #FFF9C4;
+    --manager-note-icon-color: rgba(0, 0, 0, 0.4);
+    --manager-note-title-color: rgba(0, 0, 0, 0.8);
+    --manager-note-time-color: rgba(0, 0, 0, 0.35);
+    --manager-btn-color: rgba(0, 0, 0, 0.35);
+    --manager-btn-hover-bg: rgba(0, 0, 0, 0.06);
+    --manager-btn-hover-color: rgba(0, 0, 0, 0.6);
+    --manager-pinned-color: rgba(0, 0, 0, 0.25);
+    --manager-empty-color: rgba(0, 0, 0, 0.3);
+    --manager-statusbar-bg: rgba(255, 255, 255, 0.4);
+    --manager-statusbar-border: rgba(0, 0, 0, 0.04);
+    --manager-statusbar-color: rgba(0, 0, 0, 0.35);
+    --manager-overlay-bg: rgba(255, 255, 255, 0.95);
+    --manager-overlay-border: rgba(0, 0, 0, 0.08);
+    --manager-overlay-shadow: 0 8px 24px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0, 0, 0, 0.1);
+    --manager-trash-icon-bg: #f0f0f0;
+    --manager-trash-icon-color: rgba(0, 0, 0, 0.3);
+    --manager-trash-btn-border: rgba(220, 38, 38, 0.2);
+    --manager-trash-btn-hover-bg: rgba(220, 38, 38, 0.06);
+    --manager-trash-confirm-color: rgba(0, 0, 0, 0.6);
+    --manager-trash-cancel-border: rgba(0, 0, 0, 0.1);
+    --manager-trash-cancel-hover-bg: rgba(0, 0, 0, 0.04);
+    --manager-scrollbar-thumb: rgba(0, 0, 0, 0.15);
     --foreground: oklch(0.145 0 0);
     --card: oklch(1 0 0);
     --card-foreground: oklch(0.145 0 0);
@@ -82,6 +118,42 @@
 
 .dark {
     --background: oklch(0.145 0 0);
+
+    /* Manager window variables - Dark */
+    --manager-bg: #1a1a1a;
+    --manager-titlebar-bg: rgba(255, 255, 255, 0.06);
+    --manager-titlebar-border: rgba(255, 255, 255, 0.08);
+    --manager-title-color: rgba(255, 255, 255, 0.85);
+    --manager-icon-color: rgba(255, 255, 255, 0.5);
+    --manager-icon-hover-bg: rgba(255, 255, 255, 0.1);
+    --manager-icon-hover-color: rgba(255, 255, 255, 0.8);
+    --manager-card-bg: rgba(255, 255, 255, 0.06);
+    --manager-card-border: rgba(255, 255, 255, 0.06);
+    --manager-card-hover-bg: rgba(255, 255, 255, 0.1);
+    --manager-card-hover-border: rgba(255, 255, 255, 0.12);
+    --manager-note-icon-bg: rgba(255, 249, 196, 0.12);
+    --manager-note-icon-color: rgba(255, 255, 255, 0.5);
+    --manager-note-title-color: rgba(255, 255, 255, 0.9);
+    --manager-note-time-color: rgba(255, 255, 255, 0.4);
+    --manager-btn-color: rgba(255, 255, 255, 0.4);
+    --manager-btn-hover-bg: rgba(255, 255, 255, 0.1);
+    --manager-btn-hover-color: rgba(255, 255, 255, 0.7);
+    --manager-pinned-color: rgba(255, 255, 255, 0.35);
+    --manager-empty-color: rgba(255, 255, 255, 0.35);
+    --manager-statusbar-bg: rgba(255, 255, 255, 0.04);
+    --manager-statusbar-border: rgba(255, 255, 255, 0.06);
+    --manager-statusbar-color: rgba(255, 255, 255, 0.4);
+    --manager-overlay-bg: rgba(40, 40, 40, 0.95);
+    --manager-overlay-border: rgba(255, 255, 255, 0.12);
+    --manager-overlay-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.3);
+    --manager-trash-icon-bg: rgba(255, 255, 255, 0.08);
+    --manager-trash-icon-color: rgba(255, 255, 255, 0.35);
+    --manager-trash-btn-border: rgba(220, 38, 38, 0.3);
+    --manager-trash-btn-hover-bg: rgba(220, 38, 38, 0.12);
+    --manager-trash-confirm-color: rgba(255, 255, 255, 0.65);
+    --manager-trash-cancel-border: rgba(255, 255, 255, 0.15);
+    --manager-trash-cancel-hover-bg: rgba(255, 255, 255, 0.08);
+    --manager-scrollbar-thumb: rgba(255, 255, 255, 0.2);
     --foreground: oklch(0.985 0 0);
     --card: oklch(0.205 0 0);
     --card-foreground: oklch(0.985 0 0);
@@ -137,4 +209,8 @@
 }
 ::-webkit-scrollbar-track {
   background: transparent;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: var(--manager-scrollbar-thumb);
 }
