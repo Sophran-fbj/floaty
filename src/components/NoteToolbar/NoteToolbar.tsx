@@ -1,3 +1,4 @@
+import { useState, useRef, useEffect } from "react";
 import type { Editor } from "@tiptap/react";
 import { Button } from "@/components/ui/button";
 import {
@@ -5,6 +6,12 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Link2, Unlink } from "lucide-react";
 import styles from "./NoteToolbar.module.css";
 
 interface NoteToolbarProps {
@@ -36,6 +43,106 @@ const BLOCK_FORMAT_ITEMS: ToolbarItem[] = [
   { label: "1.", command: "toggleOrderedList", title: "有序列表", mark: "orderedList", noActive: true },
   { label: "\u2611", command: "toggleTaskList", title: "任务列表", mark: "taskList", noActive: true },
 ];
+
+function LinkButton({ editor }: { editor: Editor }) {
+  const [open, setOpen] = useState(false);
+  const [url, setUrl] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+  const isActive = editor.isActive("link");
+
+  useEffect(() => {
+    if (open) {
+      const existing = editor.getAttributes("link").href || "";
+      setUrl(existing);
+      setTimeout(() => inputRef.current?.select(), 0);
+    }
+  }, [open, editor]);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+        e.preventDefault();
+        setOpen((v) => !v);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
+  const applyLink = () => {
+    if (!url.trim()) {
+      editor.chain().focus().unsetLink().run();
+    } else {
+      editor.chain().focus().setLink({ href: url.trim() }).run();
+    }
+    setOpen(false);
+  };
+
+  const removeLink = () => {
+    editor.chain().focus().unsetLink().run();
+    setOpen(false);
+  };
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <PopoverTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className={`${styles.btn} ${isActive ? styles.active : ""}`}
+            >
+              <Link2 size={14} />
+            </Button>
+          </PopoverTrigger>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">链接 (Ctrl+K)</TooltipContent>
+      </Tooltip>
+      <PopoverContent
+        side="top"
+        align="start"
+        className={styles.linkPopover}
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
+        <div className={styles.linkForm}>
+          <input
+            ref={inputRef}
+            type="url"
+            className={styles.linkInput}
+            placeholder="输入链接地址..."
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                applyLink();
+              }
+              if (e.key === "Escape") {
+                setOpen(false);
+              }
+            }}
+          />
+          {isActive && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={styles.linkAction}
+                  onClick={removeLink}
+                >
+                  <Unlink size={14} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top">移除链接</TooltipContent>
+            </Tooltip>
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 export function NoteToolbar({ editor, fontSize, onFontSizeChange, opacity, onOpacityChange }: NoteToolbarProps) {
   if (!editor) return null;
@@ -74,6 +181,7 @@ export function NoteToolbar({ editor, fontSize, onFontSizeChange, opacity, onOpa
     <div className={styles.toolbarWrapper}>
       <div className={styles.toolbar}>
         {TEXT_FORMAT_ITEMS.map(renderItem)}
+        <LinkButton editor={editor} />
         <div className={styles.separator} />
         {BLOCK_FORMAT_ITEMS.map(renderItem)}
         <div className={styles.spacer} />

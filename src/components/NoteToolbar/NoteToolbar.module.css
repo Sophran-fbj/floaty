@@ -89,3 +89,45 @@
   text-align: center;
   user-select: none;
 }
+
+/* 链接弹窗 */
+.linkPopover {
+  width: 260px;
+  padding: 8px;
+}
+
+.linkForm {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.linkInput {
+  flex: 1;
+  min-width: 0;
+  height: 30px;
+  padding: 0 8px;
+  font-size: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+  outline: none;
+  background: white;
+}
+
+.linkInput:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+
+.linkAction {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  flex-shrink: 0;
+  color: rgba(0, 0, 0, 0.5);
+}
+
+.linkAction:hover {
+  color: #dc2626;
+  background: rgba(220, 38, 38, 0.08);
+}

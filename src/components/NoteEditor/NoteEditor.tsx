@@ -1,7 +1,8 @@
-import type { CSSProperties } from "react";
+import { type CSSProperties, useEffect, useRef } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
+import Link from "@tiptap/extension-link";
 import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
 import { Extension } from "@tiptap/core";
@@ -9,6 +10,7 @@ import type { Editor } from "@tiptap/react";
 import Document from "@tiptap/extension-document";
 import Paragraph from "@tiptap/extension-paragraph";
 import Text from "@tiptap/extension-text";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import styles from "./NoteEditor.module.css";
 
 /**
@@ -84,6 +86,23 @@ export function NoteEditor({
   onChange,
   onEditorReady,
 }: NoteEditorProps) {
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = wrapperRef.current;
+    if (!el) return;
+    const onKey = (e: KeyboardEvent) => {
+      el.classList.toggle(styles.ctrlHeld, e.ctrlKey || e.metaKey);
+    };
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("keyup", onKey);
+    window.addEventListener("blur", () => el.classList.remove(styles.ctrlHeld));
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("keyup", onKey);
+    };
+  }, []);
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -103,12 +122,30 @@ export function NoteEditor({
         },
       }),
       Underline,
+      Link.configure({
+        openOnClick: false,
+        autolink: true,
+        linkOnPaste: true,
+        defaultProtocol: "https",
+      }),
       TaskList,
       TaskItem.configure({ nested: true }),
       ListBackspace,
       CleanTrailingEmpty,
     ],
     editorProps: {
+      handleDOMEvents: {
+        click: (_view, event) => {
+          const anchor = (event.target as HTMLElement).closest("a");
+          if (!anchor) return false;
+          event.preventDefault();
+          if (event.ctrlKey || event.metaKey) {
+            const href = anchor.getAttribute("href");
+            if (href) openUrl(href);
+          }
+          return false;
+        },
+      },
       clipboardTextSerializer: (slice) => {
         const text: string[] = [];
         slice.content.forEach((node) => {
@@ -141,7 +178,7 @@ export function NoteEditor({
   });
 
   return (
-    <div className={styles.editor}>
+    <div ref={wrapperRef} className={styles.editor}>
       <EditorContent
         editor={editor}
         className={styles.editorContent}
